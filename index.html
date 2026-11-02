@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estudio de proporciones</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+/* ==========================================================
+   CSS: la apariencia de la página.
+   Concepto: una lámina de package drawing. Perfil y frente
+   comparten escala y línea de suelo, como en un plano técnico.
+   Los colores son "variables": se definen una vez y se reutilizan.
+   ========================================================== */
+:root {
+  --papel: #e9ecea;
+  --plano: #f6f7f5;
+  --tinta: #171c1e;
+  --tinta-suave: #4f5a5e;
+  --linea: #c6cdcb;
+  --carroceria: #c9d0d1;
+  --neumatico: #23292b;
+  --llanta: #9fa9ac;
+  --medida: #b3470e;
+  --titulo: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --texto: "IBM Plex Sans", system-ui, sans-serif;
+  --numero: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --papel: #12171a; --plano: #1a2124; --tinta: #e8eceb; --tinta-suave: #a3afb2;
+    --linea: #364145; --carroceria: #4a5659; --neumatico: #0a0d0e; --llanta: #7c888b;
+    --medida: #f08a4b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --papel: #12171a; --plano: #1a2124; --tinta: #e8eceb; --tinta-suave: #a3afb2;
+  --linea: #364145; --carroceria: #4a5659; --neumatico: #0a0d0e; --llanta: #7c888b;
+  --medida: #f08a4b; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--papel);
+  color: var(--tinta);
+  font: 400 15px/1.45 var(--texto);
+}
+.lamina {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-block: 20px 32px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Encabezado */
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+h1 {
+  margin: 0;
+  font: 600 clamp(30px, 4vw, 42px)/1 var(--titulo);
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+.version { font: 400 13px var(--numero); color: var(--tinta-suave); margin: 4px 0 0; }
+.tipologias { display: flex; flex-wrap: wrap; gap: 6px; }
+.tipologias button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  background: var(--plano);
+  color: var(--tinta);
+  font: 500 14px var(--texto);
+  cursor: pointer;
+}
+.tipologias button[aria-pressed="true"] {
+  background: var(--tinta);
+  border-color: var(--tinta);
+  color: var(--plano);
+}
+button:focus-visible, input:focus-visible {
+  outline: 2px solid var(--medida);
+  outline-offset: 2px;
+}
+
+/* Distribución: lámina a la izquierda, controles a la derecha */
+.estudio { display: flex; flex-direction: column; gap: 16px; }
+.columna { display: contents; }
+.vistas { display: contents; }
+
+.vista {
+  background: var(--plano);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  min-width: 0;
+  margin: 0;
+}
+.vista figcaption {
+  padding: 8px 12px 0;
+  font: 600 14px var(--titulo);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.vista svg { display: block; width: 100%; height: auto; }
+.perfil {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 5;
+}
+
+/* Resumen de medidas */
+.medidas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1px;
+  background: var(--linea);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.medida { background: var(--plano); padding: 10px 12px; min-width: 0; }
+.medida span { display: block; font-size: 13px; color: var(--tinta-suave); }
+.medida strong {
+  display: block;
+  font: 500 20px var(--numero);
+  font-variant-numeric: tabular-nums;
+}
+
+.nota { margin: 0; font-size: 14px; color: var(--tinta-suave); max-width: 72ch; }
+.nota b { color: var(--tinta); font-weight: 600; }
+
+/* Panel de controles */
+.panel {
+  background: var(--plano);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.panel h2 {
+  margin: 4px 0 0;
+  font: 600 19px/1.1 var(--titulo);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.panel h2:first-child { margin-top: 0; }
+.control { display: flex; flex-direction: column; gap: 2px; }
+.control .fila {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.control label { font-weight: 500; }
+.control output {
+  font: 500 14px var(--numero);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.control small { color: var(--tinta-suave); font: 400 12.5px var(--numero); }
+input[type="range"] {
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  accent-color: var(--medida);
+}
+.interruptor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.interruptor input { width: 18px; height: 18px; accent-color: var(--medida); }
+.volver {
+  min-height: 44px;
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tinta);
+  font: 500 14px var(--texto);
+  cursor: pointer;
+}
+
+/* Dibujo */
+.suelo { stroke: var(--tinta-suave); stroke-width: 1.5; }
+.cuerpo { fill: var(--carroceria); stroke: var(--tinta); stroke-width: 2; stroke-linejoin: round; }
+.goma { fill: var(--neumatico); stroke: var(--tinta-suave); stroke-width: 1; }
+.llanta { fill: var(--llanta); }
+.guia { fill: none; stroke: var(--medida); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.cota { stroke: var(--tinta-suave); stroke-width: 1.2; fill: none; }
+.valor { fill: var(--tinta); font: 500 15px var(--numero); text-anchor: middle; }
+.rotulo { fill: var(--tinta-suave); font: 400 13px var(--texto); text-anchor: middle; }
+.ruedas-texto { fill: var(--medida); font: 500 15px var(--numero); text-anchor: middle; }
+
+/* Pantallas angostas: textos más grandes en el perfil y frente más contenido */
+@media (max-width: 979px) {
+  .perfil .valor, .perfil .ruedas-texto { font-size: 28px; }
+  .perfil .rotulo { display: none; }
+  .frente svg { max-width: 260px; margin: 0 auto; }
+}
+
+/* Pantallas anchas: dos columnas */
+@media (min-width: 980px) {
+  .estudio { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+  .columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; position: sticky; top: 12px; }
+  .vistas { display: flex; gap: 16px; align-items: stretch; }
+  /* El ancho de cada vista es proporcional a su dibujo: así comparten escala */
+  .perfil { position: static; flex: 840 1 0; min-width: 0; }
+  .frente { flex: 360 1 0; }
+}
+</style>
+
+</head>
+<body>
+<main class="lamina">
+  <header class="cabecera">
+    <div>
+      <h1>Estudio de proporciones</h1>
+      <p class="version">v0.1 · todo se mide en ruedas</p>
+    </div>
+    <nav class="tipologias" id="tipologias" aria-label="Tipología de vehículo"></nav>
+  </header>
+
+  <div class="estudio">
+    <div class="columna">
+      <div class="vistas">
+        <figure class="vista perfil">
+          <figcaption>Perfil</figcaption>
+          <svg id="dibujo-perfil" viewBox="0 0 840 420" role="img" aria-label="Vista lateral del auto con sus medidas en ruedas"></svg>
+        </figure>
+        <figure class="vista frente">
+          <figcaption>Frente</figcaption>
+          <svg id="dibujo-frente" viewBox="0 0 360 420" role="img" aria-label="Vista frontal del auto con su ancho y altura en ruedas"></svg>
+        </figure>
+      </div>
+      <section class="medidas" id="medidas" aria-label="Resumen de medidas"></section>
+      <p class="nota" id="nota"></p>
+    </div>
+
+    <aside class="panel">
+      <h2>Rueda</h2>
+      <div id="controles-rueda" style="display:contents"></div>
+      <h2>Proporciones</h2>
+      <div id="controles-proporcion" style="display:contents"></div>
+      <label class="interruptor">
+        <input type="checkbox" id="ver-ruedas" checked>
+        Mostrar medidas en ruedas
+      </label>
+      <button type="button" class="volver" id="volver">Volver a la tipología</button>
+    </aside>
+  </div>
+</main>
+
+<script>
+/* ==========================================================
+   JAVASCRIPT: el comportamiento de la página.
+
+   Idea central: el auto se guarda en milímetros, como un auto
+   real. La rueda es la unidad con que lo medimos. Si la rueda
+   cambia, el auto sigue igual y cambia cuántas ruedas mide.
+   ========================================================== */
+
+// 1) DATOS ---------------------------------------------------
+
+// Silueta típica de cada tipología, medida en fotos de perfil.
+// u: posición a lo largo del auto. v: contorno superior. b: contorno inferior.
+const SILUETAS = {"u":[0.0,0.0833,0.1667,0.25,0.3333,0.4167,0.5,0.5833,0.6667,0.75,0.8333,0.9167,1.0,1.0278,1.0556,1.0833,1.1111,1.1389,1.1667,1.1944,1.2222,1.25,1.2778,1.3056,1.3333,1.3611,1.3889,1.4167,1.4444,1.4722,1.5,1.5278,1.5556,1.5833,1.6111,1.6389,1.6667,1.6944,1.7222,1.75,1.7778,1.8056,1.8333,1.8611,1.8889,1.9167,1.9444,1.9722,2.0,2.0833,2.1667,2.25,2.3333,2.4167,2.5,2.5833,2.6667,2.75,2.8333,2.9167,3.0],"tipos":{"sedan":{"v":[0.423,0.481,0.533,0.565,0.587,0.605,0.62,0.633,0.645,0.657,0.669,0.677,0.683,0.689,0.695,0.701,0.706,0.712,0.722,0.737,0.76,0.79,0.821,0.85,0.879,0.908,0.936,0.957,0.972,0.981,0.988,0.993,0.995,0.997,0.999,1.0,1.0,0.999,0.997,0.995,0.991,0.987,0.981,0.974,0.963,0.95,0.935,0.919,0.902,0.884,0.866,0.846,0.827,0.81,0.795,0.785,0.777,0.763,0.714,0.61,0.499],"b":[0.26,0.198,0.153,0.134,0.125,0.117,0.107,0.092,0.068,0.04,0.018,0.007,0.004,0.01,0.029,0.063,0.102,0.125,0.132,0.134,0.135,0.136,0.137,0.138,0.138,0.138,0.138,0.138,0.138,0.139,0.14,0.141,0.141,0.142,0.144,0.145,0.145,0.146,0.147,0.147,0.148,0.148,0.146,0.135,0.109,0.069,0.033,0.013,0.007,0.013,0.033,0.071,0.121,0.161,0.179,0.188,0.196,0.208,0.228,0.275,0.339]},"hatch":{"v":[0.458,0.502,0.542,0.57,0.591,0.607,0.62,0.633,0.645,0.655,0.664,0.673,0.681,0.69,0.697,0.704,0.713,0.725,0.741,0.764,0.791,0.818,0.845,0.871,0.896,0.92,0.941,0.957,0.97,0.98,0.986,0.992,0.996,0.999,1.0,1.0,1.0,1.0,0.999,0.997,0.996,0.995,0.992,0.989,0.986,0.982,0.977,0.972,0.968,0.963,0.956,0.943,0.92,0.879,0.836,0.804,0.776,0.737,0.661,0.551,0.462],"b":[0.262,0.198,0.153,0.135,0.126,0.118,0.111,0.095,0.067,0.036,0.016,0.006,0.004,0.008,0.024,0.054,0.093,0.12,0.125,0.122,0.122,0.124,0.127,0.13,0.134,0.137,0.139,0.141,0.144,0.145,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.147,0.148,0.149,0.15,0.144,0.121,0.084,0.053,0.035,0.028,0.03,0.041,0.06,0.089,0.131,0.172,0.192,0.202,0.215,0.233,0.26,0.291]},"suv":{"v":[0.409,0.496,0.565,0.598,0.613,0.624,0.635,0.644,0.653,0.66,0.666,0.673,0.68,0.686,0.69,0.697,0.708,0.725,0.749,0.774,0.797,0.822,0.847,0.872,0.895,0.916,0.934,0.949,0.962,0.971,0.979,0.985,0.989,0.993,0.995,0.997,0.999,1.0,1.0,1.0,1.0,1.0,0.999,0.997,0.995,0.994,0.993,0.99,0.986,0.979,0.969,0.96,0.95,0.926,0.883,0.838,0.796,0.746,0.654,0.518,0.412],"b":[0.264,0.21,0.171,0.155,0.148,0.139,0.124,0.096,0.063,0.035,0.018,0.008,0.006,0.01,0.023,0.05,0.087,0.12,0.138,0.143,0.144,0.144,0.143,0.143,0.144,0.145,0.145,0.145,0.145,0.146,0.146,0.147,0.147,0.147,0.148,0.147,0.147,0.147,0.148,0.148,0.148,0.147,0.144,0.129,0.095,0.055,0.026,0.011,0.007,0.01,0.023,0.049,0.088,0.132,0.168,0.185,0.193,0.203,0.22,0.252,0.294]},"sport":{"v":[0.479,0.509,0.54,0.565,0.587,0.608,0.627,0.642,0.654,0.665,0.675,0.684,0.691,0.697,0.702,0.706,0.707,0.709,0.715,0.726,0.745,0.771,0.799,0.827,0.854,0.88,0.904,0.926,0.946,0.963,0.976,0.986,0.994,0.998,0.999,0.999,0.997,0.994,0.989,0.983,0.978,0.972,0.965,0.955,0.942,0.926,0.912,0.9,0.887,0.875,0.863,0.849,0.836,0.822,0.807,0.791,0.773,0.756,0.731,0.67,0.581],"b":[0.24,0.178,0.136,0.12,0.112,0.106,0.098,0.082,0.057,0.031,0.013,0.004,0.003,0.009,0.025,0.053,0.087,0.111,0.12,0.123,0.123,0.124,0.126,0.127,0.128,0.128,0.129,0.131,0.133,0.135,0.137,0.137,0.137,0.139,0.14,0.142,0.142,0.143,0.145,0.146,0.147,0.146,0.142,0.133,0.112,0.078,0.047,0.03,0.025,0.027,0.04,0.068,0.112,0.156,0.181,0.186,0.19,0.202,0.232,0.299,0.387]}}};
+
+// Punto de partida de cada tipología. Las proporciones son medianas de la
+// base de 40 autos. "ancho" está en mm y es provisional.
+// ejes, voladizos y alto están en ruedas.
+const TIPOLOGIAS = {
+  sedan: { nombre: 'Sedán', llanta: 17, neumatico: 215, perfil: 55, despeje: 148,
+           ejes: 4.24, volDel: 1.38, volTras: 1.6, alto: 2.16, ancho: 1830,
+           idea: 'Tres volúmenes: capó, cabina y maletero. Tiene el voladizo trasero más largo de las cuatro tipologías.' },
+  hatch: { nombre: 'Hatchback', llanta: 16, neumatico: 195, perfil: 55, despeje: 136,
+           ejes: 4.14, volDel: 1.36, volTras: 1.14, alto: 2.33, ancho: 1790,
+           idea: 'Dos volúmenes: el techo se prolonga casi hasta el final y la cola se corta de forma vertical.' },
+  suv:   { nombre: 'SUV', llanta: 18, neumatico: 225, perfil: 60, despeje: 192,
+           ejes: 3.73, volDel: 1.31, volTras: 1.28, alto: 2.31, ancho: 1870,
+           idea: 'Postura alta: mucha altura libre al suelo y menos ruedas entre ejes, porque la rueda mide más.' },
+  sport: { nombre: 'Deportivo', llanta: 19, neumatico: 255, perfil: 35, despeje: 120,
+           ejes: 3.9, volDel: 1.25, volTras: 1.3, alto: 1.96, ancho: 1880,
+           idea: 'Capó largo, cabina baja y retrasada, techo que cae en una sola línea hasta la cola.' }
+};
+
+// Sliders de la rueda: se mueven en pulgadas, mm y %.
+const CONTROLES_RUEDA = [
+  { clave: 'llanta', nombre: 'Diámetro de llanta', min: 14, max: 22, paso: 1, unidad: ' pulgadas' },
+  { clave: 'neumatico', nombre: 'Ancho del neumático', min: 155, max: 335, paso: 5, unidad: ' mm' },
+  { clave: 'perfil', nombre: 'Perfil del neumático', min: 25, max: 80, paso: 5, unidad: ' %' }
+];
+
+// Sliders del auto: guardan mm y se leen en ruedas.
+const CONTROLES_PROPORCION = [
+  { clave: 'ejes', nombre: 'Distancia entre ejes', min: 2200, max: 3400 },
+  { clave: 'volDel', nombre: 'Voladizo delantero', min: 600, max: 1300 },
+  { clave: 'volTras', nombre: 'Voladizo trasero', min: 500, max: 1400 },
+  { clave: 'alto', nombre: 'Altura total', min: 1100, max: 2000 },
+  { clave: 'ancho', nombre: 'Ancho total', min: 1600, max: 2200 }
+];
+
+// 2) ESTADO: los valores actuales del auto ----------------------
+
+let tipo = 'sedan';
+let auto = {};
+
+// Diámetro exterior de la rueda en mm. Ej.: 215/55 R17
+const diametro = (a) => a.llanta * 25.4 + 2 * a.neumatico * a.perfil / 100;
+
+// Carga una tipología: pasa sus proporciones de ruedas a milímetros.
+function cargarTipologia(clave) {
+  tipo = clave;
+  const t = TIPOLOGIAS[clave];
+  const D = diametro(t);
+  auto = {
+    llanta: t.llanta, neumatico: t.neumatico, perfil: t.perfil, despeje: t.despeje,
+    ejes: t.ejes * D, volDel: t.volDel * D, volTras: t.volTras * D, alto: t.alto * D,
+    ancho: t.ancho
+  };
+}
+
+// 3) FORMATO: escribir números en español ------------------------
+
+const dos = (n) => n.toFixed(2).replace('.', ',');
+const mm = (n) => Math.round(n).toLocaleString('es-CL') + ' mm';
+
+// 4) DIBUJO DEL PERFIL -------------------------------------------
+
+const ESCALA = 0.125;      // 1 mm del auto = 0,125 unidades del dibujo
+const SUELO = 330;         // altura de la línea de suelo en el dibujo
+const INICIO = 44;         // donde parte la punta delantera del auto
+
+const X = (v) => INICIO + v * ESCALA;
+const Y = (v) => SUELO - v * ESCALA;
+const fijo = (n) => n.toFixed(1);
+
+// Convierte la posición u de la silueta en milímetros a lo largo del auto.
+// De 0 a 1 es el voladizo delantero, de 1 a 2 entre ejes, de 2 a 3 el trasero.
+function posicion(u, ejeDel, ejeTras, largo) {
+  if (u <= 1) return u * ejeDel;
+  if (u <= 2) return ejeDel + (u - 1) * (ejeTras - ejeDel);
+  return ejeTras + (u - 2) * (largo - ejeTras);
+}
+
+// Une puntos con una curva suave (curva de Bézier).
+function curva(puntos) {
+  const p = (q) => fijo(q[0]) + ' ' + fijo(q[1]);
+  let d = 'M' + p(puntos[0]);
+  for (let i = 0; i < puntos.length - 1; i++) {
+    const a = puntos[Math.max(0, i - 1)], b = puntos[i], c = puntos[i + 1];
+    const e = puntos[Math.min(puntos.length - 1, i + 2)];
+    d += ' C' + p([b[0] + (c[0] - a[0]) / 6, b[1] + (c[1] - a[1]) / 6]) + ' ' +
+      p([c[0] - (e[0] - b[0]) / 6, c[1] - (e[1] - b[1]) / 6]) + ' ' + p(c);
+  }
+  return d;
+}
+
+function rueda(cx, D, a) {
+  const cy = Y(D / 2);
+  return `<circle class="goma" cx="${fijo(cx)}" cy="${fijo(cy)}" r="${fijo(D / 2 * ESCALA)}"></circle>` +
+    `<circle class="llanta" cx="${fijo(cx)}" cy="${fijo(cy)}" r="${fijo(a.llanta * 25.4 / 2 * ESCALA)}"></circle>`;
+}
+
+function cota(x1, x2, y, valor, nombre) {
+  const m = (x1 + x2) / 2;
+  return `<path class="cota" d="M${fijo(x1)} ${y - 6}V${y + 6}M${fijo(x2)} ${y - 6}V${y + 6}M${fijo(x1)} ${y}H${fijo(x2)}"></path>` +
+    `<text class="valor" x="${fijo(m)}" y="${y + 24}">${valor}</text>` +
+    `<text class="rotulo" x="${fijo(m)}" y="${y + 42}">${nombre}</text>`;
+}
+
+function dibujarPerfil(verRuedas) {
+  const a = auto, D = diametro(a);
+  const ejeDel = a.volDel, ejeTras = a.volDel + a.ejes, largo = ejeTras + a.volTras, H = a.alto;
+  const s = SILUETAS.tipos[tipo];
+  const techo = Math.max.apply(null, s.v);
+  const alturas = s.v.map((v) => Math.max(0.05, v / techo));
+
+  // Contorno superior
+  let d = curva(SILUETAS.u.map((u, i) => [X(posicion(u, ejeDel, ejeTras, largo)), Y(alturas[i] * H)]));
+
+  // Contorno inferior, con los espacios para las ruedas
+  const g = a.despeje, R = 0.56 * D;
+  const dy = Math.min(R * 0.98, Math.abs(D / 2 - g));
+  const dx = Math.sqrt(R * R - dy * dy);
+  const r = fijo(R * ESCALA);
+  const p = (x, y) => fijo(X(x)) + ' ' + fijo(Y(y));
+  const bajoDel = Math.max(g + 0.04 * D, Math.min(s.b[1], alturas[0] * 0.85) * H);
+  const bajoTras = Math.max(g + 0.04 * D, Math.min(s.b[s.b.length - 2], alturas[alturas.length - 1] * 0.85) * H);
+  d += ' L' + p(largo - 0.03 * D, bajoTras);
+  d += ' L' + p(Math.min(largo - 0.08 * D, ejeTras + dx + 0.05 * D), g);
+  d += ' L' + p(ejeTras + dx, g);
+  d += ` A${r} ${r} 0 1 0 ` + p(ejeTras - dx, g);
+  d += ' L' + p(ejeDel + dx, g);
+  d += ` A${r} ${r} 0 1 0 ` + p(ejeDel - dx, g);
+  d += ' L' + p(Math.max(0.08 * D, ejeDel - dx - 0.05 * D), g);
+  d += ' L' + p(0.03 * D, bajoDel);
+  d += ' Z';
+
+  let h = `<line class="suelo" x1="0" x2="840" y1="${SUELO}" y2="${SUELO}"></line>`;
+  h += `<path class="cuerpo" d="${d}"></path>`;
+  h += rueda(X(ejeDel), D, a) + rueda(X(ejeTras), D, a);
+
+  if (verRuedas) {
+    // Ruedas completas que caben entre las dos ruedas del auto
+    const caben = Math.floor(a.ejes / D - 1 + 1e-6);
+    for (let k = 0; k < caben; k++) {
+      h += `<circle class="guia" cx="${fijo(X(ejeDel + D * (k + 1)))}" cy="${fijo(Y(D / 2))}" r="${fijo(D / 2 * ESCALA)}"></circle>`;
+    }
+    h += `<text class="ruedas-texto" x="${fijo(X((ejeDel + ejeTras) / 2))}" y="${fijo(Y(D) - 10)}">${dos(a.ejes / D - 1)} ruedas entre ruedas</text>`;
+    h += cota(X(0), X(ejeDel), SUELO + 14, dos(a.volDel / D), 'voladizo del.');
+    h += cota(X(ejeDel), X(ejeTras), SUELO + 14, dos(a.ejes / D), 'entre ejes');
+    h += cota(X(ejeTras), X(largo), SUELO + 14, dos(a.volTras / D), 'voladizo tras.');
+  }
+  document.getElementById('dibujo-perfil').innerHTML = h;
+}
+
+// 5) DIBUJO DEL FRENTE --------------------------------------------
+// Sección provisional: un primer volumen que el modelo 3D usará más adelante.
+
+function dibujarFrente(verRuedas) {
+  const a = auto, D = diametro(a);
+  const cx = 168, w = a.ancho / 2, H = a.alto, g = a.despeje;
+  const px = (v) => fijo(cx + v * ESCALA);
+
+  const hombro = g + (H - g) * 0.52;   // altura de la línea de hombros
+  const techo = w * 0.68;              // medio ancho del techo
+  const lado = (s) => [
+    `L${px(s * w)} ${fijo(Y(g + 90))}`,
+    `L${px(s * w)} ${fijo(Y(hombro))}`,
+    `C${px(s * w)} ${fijo(Y(hombro + 60))} ${px(s * techo * 1.08)} ${fijo(Y(H - 170))} ${px(s * techo)} ${fijo(Y(H - 60))}`,
+    `Q${px(s * techo * 0.95)} ${fijo(Y(H))} ${px(s * techo * 0.72)} ${fijo(Y(H))}`
+  ];
+  const der = lado(1);
+  const izq = lado(-1);
+  const d = `M${px(-w * 0.9)} ${fijo(Y(g))} L${px(w * 0.9)} ${fijo(Y(g))} ` +
+    `Q${px(w)} ${fijo(Y(g))} ${px(w)} ${fijo(Y(g + 90))} ` + der.slice(1).join(' ') +
+    ` L${px(-techo * 0.72)} ${fijo(Y(H))} Q${px(-techo * 0.95)} ${fijo(Y(H))} ${px(-techo)} ${fijo(Y(H - 60))} ` +
+    `C${px(-techo * 1.08)} ${fijo(Y(H - 170))} ${px(-w)} ${fijo(Y(hombro + 60))} ${px(-w)} ${fijo(Y(hombro))} ` +
+    `L${px(-w)} ${fijo(Y(g + 90))} Q${px(-w)} ${fijo(Y(g))} ${px(-w * 0.9)} ${fijo(Y(g))} Z`;
+
+  const ta = a.neumatico * ESCALA, alto = D * ESCALA;
+  const borde = Math.min(w - a.neumatico / 2 - 10, w);
+  const goma = (s) => `<rect class="goma" x="${fijo(cx + s * borde * ESCALA - ta / 2)}" y="${fijo(Y(D))}" width="${fijo(ta)}" height="${fijo(alto)}" rx="4"></rect>`;
+
+  let h = `<line class="suelo" x1="0" x2="360" y1="${SUELO}" y2="${SUELO}"></line>`;
+  h += goma(-1) + goma(1) + `<path class="cuerpo" d="${d}"></path>`;
+
+  if (verRuedas) {
+    h += cota(cx - w * ESCALA, cx + w * ESCALA, SUELO + 14, dos(a.ancho / D), 'ancho');
+    const x = fijo(cx + w * ESCALA + 16), y1 = fijo(Y(0)), y2 = fijo(Y(H));
+    h += `<path class="cota" d="M${+x - 6} ${y1}H${+x + 6}M${+x - 6} ${y2}H${+x + 6}M${x} ${y1}V${y2}"></path>`;
+    h += `<text class="valor" x="${+x + 2}" y="${fijo(Y(H) - 10)}">${dos(a.alto / D)}</text>`;
+  }
+  document.getElementById('dibujo-frente').innerHTML = h;
+}
+
+// 6) INTERFAZ: construir y actualizar lo que se ve -------------------
+
+const porId = (id) => document.getElementById(id);
+
+function crearControl(c, contenedor) {
+  const caja = document.createElement('div');
+  caja.className = 'control';
+  caja.innerHTML = `<div class="fila"><label for="s-${c.clave}">${c.nombre}</label><output id="v-${c.clave}" for="s-${c.clave}"></output></div>` +
+    `<input type="range" id="s-${c.clave}" min="${c.min}" max="${c.max}" step="${c.paso || 5}">` +
+    (c.paso ? '' : `<small id="m-${c.clave}"></small>`);
+  contenedor.appendChild(caja);
+  // "input" ocurre cada vez que el estudiante mueve el slider
+  porId('s-' + c.clave).addEventListener('input', (e) => {
+    auto[c.clave] = Number(e.target.value);
+    actualizar();
+  });
+}
+
+function crearInterfaz() {
+  CONTROLES_RUEDA.forEach((c) => crearControl(c, porId('controles-rueda')));
+  CONTROLES_PROPORCION.forEach((c) => crearControl(c, porId('controles-proporcion')));
+
+  Object.keys(TIPOLOGIAS).forEach((clave) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.dataset.tipo = clave;
+    b.textContent = TIPOLOGIAS[clave].nombre;
+    b.addEventListener('click', () => { cargarTipologia(clave); actualizar(); });
+    porId('tipologias').appendChild(b);
+  });
+
+  porId('ver-ruedas').addEventListener('change', actualizar);
+  porId('volver').addEventListener('click', () => { cargarTipologia(tipo); actualizar(); });
+}
+
+function actualizar() {
+  const a = auto, D = diametro(a), largo = a.volDel + a.ejes + a.volTras;
+
+  CONTROLES_RUEDA.forEach((c) => {
+    porId('s-' + c.clave).value = a[c.clave];
+    porId('v-' + c.clave).textContent = a[c.clave] + c.unidad;
+  });
+  CONTROLES_PROPORCION.forEach((c) => {
+    porId('s-' + c.clave).value = a[c.clave];
+    porId('v-' + c.clave).textContent = dos(a[c.clave] / D) + ' ruedas';
+    porId('m-' + c.clave).textContent = mm(a[c.clave]);
+  });
+
+  document.querySelectorAll('.tipologias button').forEach((b) => {
+    b.setAttribute('aria-pressed', String(b.dataset.tipo === tipo));
+  });
+
+  const datos = [
+    ['Rueda', mm(D), `${a.neumatico}/${a.perfil} R${a.llanta}`],
+    ['Largo total', dos(largo / D) + ' ruedas', mm(largo)],
+    ['Alto ÷ ancho', dos(a.alto / a.ancho), 'relación de frente'],
+    ['Largo ÷ alto', dos(largo / a.alto), 'relación de perfil']
+  ];
+  porId('medidas').innerHTML = datos.map((f) =>
+    `<div class="medida"><span>${f[0]}</span><strong>${f[1]}</strong><span>${f[2]}</span></div>`).join('');
+
+  porId('nota').innerHTML = `<b>${TIPOLOGIAS[tipo].nombre}.</b> ${TIPOLOGIAS[tipo].idea} ` +
+    'El ancho de partida y la forma del frente son provisionales.';
+
+  const ver = porId('ver-ruedas').checked;
+  dibujarPerfil(ver);
+  dibujarFrente(ver);
+}
+
+// 7) INICIO ---------------------------------------------------------
+crearInterfaz();
+cargarTipologia('sedan');
+actualizar();
+</script>
+</body>
+</html>
