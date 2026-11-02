@@ -288,16 +288,16 @@ const SILUETAS = {"u":[0.0,0.0833,0.1667,0.25,0.3333,0.4167,0.5,0.5833,0.6667,0.
 // ejes, voladizos y alto están en ruedas.
 const TIPOLOGIAS = {
   sedan: { nombre: 'Sedán', llanta: 17, neumatico: 215, perfil: 55, despeje: 148,
-           ejes: 4.24, volDel: 1.38, volTras: 1.6, alto: 2.16, ancho: 1830,
+           ejes: 4.24, volDel: 1.38, volTras: 1.6, alto: 2.16, ancho: 1845,
            idea: 'Tres volúmenes: capó, cabina y maletero. Tiene el voladizo trasero más largo de las cuatro tipologías.' },
   hatch: { nombre: 'Hatchback', llanta: 16, neumatico: 195, perfil: 55, despeje: 136,
-           ejes: 4.14, volDel: 1.36, volTras: 1.14, alto: 2.33, ancho: 1790,
+           ejes: 4.14, volDel: 1.36, volTras: 1.14, alto: 2.33, ancho: 1782,
            idea: 'Dos volúmenes: el techo se prolonga casi hasta el final y la cola se corta de forma vertical.' },
   suv:   { nombre: 'SUV', llanta: 18, neumatico: 225, perfil: 60, despeje: 192,
-           ejes: 3.73, volDel: 1.31, volTras: 1.28, alto: 2.31, ancho: 1870,
+           ejes: 3.73, volDel: 1.31, volTras: 1.28, alto: 2.31, ancho: 1860,
            idea: 'Postura alta: mucha altura libre al suelo y menos ruedas entre ejes, porque la rueda mide más.' },
   sport: { nombre: 'Deportivo', llanta: 19, neumatico: 255, perfil: 35, despeje: 120,
-           ejes: 3.9, volDel: 1.25, volTras: 1.3, alto: 1.96, ancho: 1880,
+           ejes: 3.9, volDel: 1.25, volTras: 1.3, alto: 1.96, ancho: 1842,
            idea: 'Capó largo, cabina baja y retrasada, techo que cae en una sola línea hasta la cola.' }
 };
 
@@ -534,7 +534,7 @@ function actualizar() {
     `<div class="medida"><span>${f[0]}</span><strong>${f[1]}</strong><span>${f[2]}</span></div>`).join('');
 
   porId('nota').innerHTML = `<b>${TIPOLOGIAS[tipo].nombre}.</b> ${TIPOLOGIAS[tipo].idea} ` +
-    'El ancho de partida y la forma del frente son provisionales.';
+    'La forma del frente es provisional.';
 
   const ver = porId('ver-ruedas').checked;
   dibujarPerfil(ver);
