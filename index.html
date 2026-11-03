@@ -168,7 +168,7 @@ button:focus-visible, input:focus-visible {
   align-items: baseline;
   gap: 10px;
 }
-.control label { font-weight: 500; }
+.control label { font-weight: 500; min-width: 0; }
 .control output {
   font: 500 14px var(--numero);
   font-variant-numeric: tabular-nums;
@@ -258,10 +258,82 @@ input[type="range"] {
   touch-action: none;
 }
 #visor-3d:active { cursor: grabbing; }
+
+/* Cubo de vistas */
+.visor-marco { position: relative; }
+.cubo-escena { position: absolute; top: 20px; right: 20px; width: 77px; height: 77px; perspective: 720px; }
+.cubo {
+  position: relative;
+  width: 77px;
+  height: 77px;
+  transform-style: preserve-3d;
+}
+.cara {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  box-sizing: border-box;
+  grid-template-columns: 21px 1fr 21px;
+  grid-template-rows: 21px 1fr 21px;
+  background: var(--plano);
+  box-shadow: inset 0 0 0 1px var(--tinta-suave);
+}
+.cara button {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.cara button.activa { background: var(--medida); outline: none; }
+.cara-nombre {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--tinta);
+  font: 600 10px var(--titulo);
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+.cara:has(button:nth-child(5).activa) .cara-nombre { color: var(--sobre-medida); }
+.proyeccion {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: flex;
+}
+.proyeccion button {
+  min-height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--linea);
+  background: var(--plano);
+  color: var(--tinta);
+  font: 500 13px var(--texto);
+  cursor: pointer;
+}
+.proyeccion button:first-child { border-radius: 4px 0 0 4px; }
+.proyeccion button:last-child { border-radius: 0 4px 4px 0; border-left: 0; }
+.proyeccion button[aria-pressed="true"] { background: var(--tinta); border-color: var(--tinta); color: var(--plano); }
+.vista-inicio {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  background: var(--plano);
+  color: var(--tinta);
+  font: 500 13px var(--texto);
+  cursor: pointer;
+}
 #visor-3d canvas { display: block; width: 100%; height: 100%; }
 .sin-3d { padding: 16px; color: var(--tinta-suave); }
 
 /* Dibujo */
+.cota-trocha { fill: none; stroke: var(--medida); stroke-width: 1.2; stroke-dasharray: 4 3; }
+.techo-plano { fill: none; stroke: var(--tinta-suave); stroke-width: 1.2; }
 .suelo { stroke: var(--tinta-suave); stroke-width: 1.5; }
 .cuerpo { fill: var(--carroceria); stroke: var(--tinta); stroke-width: 2; stroke-linejoin: round; }
 .goma { fill: var(--neumatico); stroke: var(--tinta-suave); stroke-width: 1; }
@@ -274,10 +346,11 @@ input[type="range"] {
 
 /* Pantallas angostas: textos más grandes en el perfil y frente más contenido */
 @media (max-width: 979px) {
-  .perfil .valor, .perfil .ruedas-texto { font-size: 28px; }
-  .perfil .rotulo { display: none; }
+  .perfil .valor, .perfil .ruedas-texto, .superior .valor { font-size: 28px; }
+  .perfil .rotulo, .superior .rotulo { display: none; }
   .frente svg { max-width: 260px; margin: 0 auto; }
   .panel { order: 1; }
+  .cubo-escena { top: 18px; right: 14px; transform: scale(0.72); transform-origin: top right; }
   .resultado { order: 2; scroll-margin-top: 215px; }
   .resultado-vistas { grid-template-columns: minmax(0, 1fr); }
   .resultado-vistas figure:last-child svg { max-width: 260px; }
@@ -288,10 +361,10 @@ input[type="range"] {
   .estudio { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
   .columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   .panel { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
-  .vistas { display: flex; gap: 16px; align-items: stretch; }
   /* El ancho de cada vista es proporcional a su dibujo: así comparten escala */
-  .perfil { position: static; flex: 840 1 0; min-width: 0; }
-  .frente { flex: 360 1 0; }
+  .vistas { display: grid; grid-template-columns: minmax(0, 840fr) minmax(0, 360fr); gap: 16px; align-items: stretch; }
+  .perfil { position: static; }
+  .medidas { align-content: start; grid-template-columns: minmax(0, 1fr); }
 }
 </style>
 
@@ -301,7 +374,7 @@ input[type="range"] {
   <header class="cabecera">
     <div>
       <h1>Estudio de proporciones</h1>
-      <p class="version">v0.2 · todo se mide en ruedas</p>
+      <p class="version">v0.5 · todo se mide en ruedas</p>
     </div>
     <nav class="tipologias" id="tipologias" aria-label="Tipología de vehículo"></nav>
   </header>
@@ -317,8 +390,12 @@ input[type="range"] {
           <figcaption>Frente</figcaption>
           <svg id="dibujo-frente" viewBox="0 0 360 420" role="img" aria-label="Vista frontal del auto con su ancho y altura en ruedas"></svg>
         </figure>
+        <figure class="vista superior">
+          <figcaption>Superior</figcaption>
+          <svg id="dibujo-superior" viewBox="0 0 840 390" role="img" aria-label="Vista superior del auto con el ancho de su nariz en ruedas"></svg>
+        </figure>
+        <section class="medidas" id="medidas" aria-label="Resumen de medidas"></section>
       </div>
-      <section class="medidas" id="medidas" aria-label="Resumen de medidas"></section>
       <p class="nota" id="nota"></p>
 
       <section class="resultado" id="resultado" aria-labelledby="titulo-resultado" hidden>
@@ -330,8 +407,18 @@ input[type="range"] {
           <button type="button" class="descargar" id="descargar-obj">Descargar OBJ</button>
         </div>
         <figure>
-          <figcaption>Modelo 3D · arrastra para girar, rueda o pellizco para acercar</figcaption>
-          <div id="visor-3d"></div>
+          <figcaption>Modelo 3D · usa el cubo o arrastra para girar</figcaption>
+          <div class="visor-marco">
+            <div id="visor-3d"></div>
+            <div class="proyeccion" role="group" aria-label="Tipo de proyección">
+              <button type="button" id="ver-ortografica" aria-pressed="true">Ortográfica</button>
+              <button type="button" id="ver-perspectiva" aria-pressed="false">Perspectiva</button>
+            </div>
+            <div class="cubo-vistas" id="cubo-vistas" role="group" aria-label="Cubo de vistas">
+              <div class="cubo-escena"><div class="cubo" id="cubo"></div></div>
+              <button type="button" class="vista-inicio" id="vista-inicio">Vista inicial</button>
+            </div>
+          </div>
         </figure>
         <div class="resultado-vistas">
           <figure>
@@ -342,6 +429,10 @@ input[type="range"] {
             <figcaption>Vista frontal</figcaption>
             <svg id="vista-frontal" viewBox="0 0 360 420" role="img" aria-label="Vista frontal compilada"></svg>
           </figure>
+          <figure>
+            <figcaption>Vista superior</figcaption>
+            <svg id="vista-superior" viewBox="0 0 840 390" role="img" aria-label="Vista superior compilada"></svg>
+          </figure>
         </div>
       </section>
     </div>
@@ -351,6 +442,8 @@ input[type="range"] {
       <div id="controles-rueda" style="display:contents"></div>
       <h2>Proporciones</h2>
       <div id="controles-proporcion" style="display:contents"></div>
+      <h2>Frente y ruedas</h2>
+      <div id="controles-frente" style="display:contents"></div>
       <label class="interruptor">
         <input type="checkbox" id="ver-ruedas" checked>
         Mostrar medidas en ruedas
@@ -381,20 +474,26 @@ input[type="range"] {
 const SILUETAS = {"u":[0.0,0.0833,0.1667,0.25,0.3333,0.4167,0.5,0.5833,0.6667,0.75,0.8333,0.9167,1.0,1.0278,1.0556,1.0833,1.1111,1.1389,1.1667,1.1944,1.2222,1.25,1.2778,1.3056,1.3333,1.3611,1.3889,1.4167,1.4444,1.4722,1.5,1.5278,1.5556,1.5833,1.6111,1.6389,1.6667,1.6944,1.7222,1.75,1.7778,1.8056,1.8333,1.8611,1.8889,1.9167,1.9444,1.9722,2.0,2.0833,2.1667,2.25,2.3333,2.4167,2.5,2.5833,2.6667,2.75,2.8333,2.9167,3.0],"tipos":{"sedan":{"v":[0.423,0.481,0.533,0.565,0.587,0.605,0.62,0.633,0.645,0.657,0.669,0.677,0.683,0.689,0.695,0.701,0.706,0.712,0.722,0.737,0.76,0.79,0.821,0.85,0.879,0.908,0.936,0.957,0.972,0.981,0.988,0.993,0.995,0.997,0.999,1.0,1.0,0.999,0.997,0.995,0.991,0.987,0.981,0.974,0.963,0.95,0.935,0.919,0.902,0.884,0.866,0.846,0.827,0.81,0.795,0.785,0.777,0.763,0.714,0.61,0.499],"b":[0.26,0.198,0.153,0.134,0.125,0.117,0.107,0.092,0.068,0.04,0.018,0.007,0.004,0.01,0.029,0.063,0.102,0.125,0.132,0.134,0.135,0.136,0.137,0.138,0.138,0.138,0.138,0.138,0.138,0.139,0.14,0.141,0.141,0.142,0.144,0.145,0.145,0.146,0.147,0.147,0.148,0.148,0.146,0.135,0.109,0.069,0.033,0.013,0.007,0.013,0.033,0.071,0.121,0.161,0.179,0.188,0.196,0.208,0.228,0.275,0.339]},"hatch":{"v":[0.458,0.502,0.542,0.57,0.591,0.607,0.62,0.633,0.645,0.655,0.664,0.673,0.681,0.69,0.697,0.704,0.713,0.725,0.741,0.764,0.791,0.818,0.845,0.871,0.896,0.92,0.941,0.957,0.97,0.98,0.986,0.992,0.996,0.999,1.0,1.0,1.0,1.0,0.999,0.997,0.996,0.995,0.992,0.989,0.986,0.982,0.977,0.972,0.968,0.963,0.956,0.943,0.92,0.879,0.836,0.804,0.776,0.737,0.661,0.551,0.462],"b":[0.262,0.198,0.153,0.135,0.126,0.118,0.111,0.095,0.067,0.036,0.016,0.006,0.004,0.008,0.024,0.054,0.093,0.12,0.125,0.122,0.122,0.124,0.127,0.13,0.134,0.137,0.139,0.141,0.144,0.145,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.147,0.148,0.149,0.15,0.144,0.121,0.084,0.053,0.035,0.028,0.03,0.041,0.06,0.089,0.131,0.172,0.192,0.202,0.215,0.233,0.26,0.291]},"suv":{"v":[0.409,0.496,0.565,0.598,0.613,0.624,0.635,0.644,0.653,0.66,0.666,0.673,0.68,0.686,0.69,0.697,0.708,0.725,0.749,0.774,0.797,0.822,0.847,0.872,0.895,0.916,0.934,0.949,0.962,0.971,0.979,0.985,0.989,0.993,0.995,0.997,0.999,1.0,1.0,1.0,1.0,1.0,0.999,0.997,0.995,0.994,0.993,0.99,0.986,0.979,0.969,0.96,0.95,0.926,0.883,0.838,0.796,0.746,0.654,0.518,0.412],"b":[0.264,0.21,0.171,0.155,0.148,0.139,0.124,0.096,0.063,0.035,0.018,0.008,0.006,0.01,0.023,0.05,0.087,0.12,0.138,0.143,0.144,0.144,0.143,0.143,0.144,0.145,0.145,0.145,0.145,0.146,0.146,0.147,0.147,0.147,0.148,0.147,0.147,0.147,0.148,0.148,0.148,0.147,0.144,0.129,0.095,0.055,0.026,0.011,0.007,0.01,0.023,0.049,0.088,0.132,0.168,0.185,0.193,0.203,0.22,0.252,0.294]},"sport":{"v":[0.479,0.509,0.54,0.565,0.587,0.608,0.627,0.642,0.654,0.665,0.675,0.684,0.691,0.697,0.702,0.706,0.707,0.709,0.715,0.726,0.745,0.771,0.799,0.827,0.854,0.88,0.904,0.926,0.946,0.963,0.976,0.986,0.994,0.998,0.999,0.999,0.997,0.994,0.989,0.983,0.978,0.972,0.965,0.955,0.942,0.926,0.912,0.9,0.887,0.875,0.863,0.849,0.836,0.822,0.807,0.791,0.773,0.756,0.731,0.67,0.581],"b":[0.24,0.178,0.136,0.12,0.112,0.106,0.098,0.082,0.057,0.031,0.013,0.004,0.003,0.009,0.025,0.053,0.087,0.111,0.12,0.123,0.123,0.124,0.126,0.127,0.128,0.128,0.129,0.131,0.133,0.135,0.137,0.137,0.137,0.139,0.14,0.142,0.142,0.143,0.145,0.146,0.147,0.146,0.142,0.133,0.112,0.078,0.047,0.03,0.025,0.027,0.04,0.068,0.112,0.156,0.181,0.186,0.19,0.202,0.232,0.299,0.387]}}};
 
 // Punto de partida de cada tipología. Las proporciones son medianas de la
-// base de 40 autos. "ancho" es la mediana en mm, sin espejos.
+// base de 40 autos. ancho y trocha son medianas en mm; los rangos son el mínimo y
+// máximo real de cada tipología. trocha es la distancia entre ruedas delanteras,
+// medida entre sus centros, y trochaTras es la misma medida en las ruedas traseras.
 // ejes, voladizos y alto están en ruedas.
 const TIPOLOGIAS = {
   sedan: { nombre: 'Sedán', llanta: 17, neumatico: 215, perfil: 55, despeje: 148,
            ejes: 4.24, volDel: 1.38, volTras: 1.6, alto: 2.16, ancho: 1845,
+           trocha: 1590, trochaTras: 1602, rangoAncho: [1780, 1900], rangoTrocha: [1530, 1680], rangoTrochaTras: [1530, 1715],
            idea: 'Tres volúmenes: capó, cabina y maletero. Tiene el voladizo trasero más largo de las cuatro tipologías.' },
   hatch: { nombre: 'Hatchback', llanta: 16, neumatico: 195, perfil: 55, despeje: 136,
            ejes: 4.14, volDel: 1.36, volTras: 1.14, alto: 2.33, ancho: 1782,
+           trocha: 1530, trochaTras: 1522, rangoAncho: [1694, 1825], rangoTrocha: [1487, 1572], rangoTrochaTras: [1474, 1580],
            idea: 'Dos volúmenes: el techo se prolonga casi hasta el final y la cola se corta de forma vertical.' },
   suv:   { nombre: 'SUV', llanta: 18, neumatico: 225, perfil: 60, despeje: 192,
            ejes: 3.73, volDel: 1.31, volTras: 1.28, alto: 2.31, ancho: 1860,
+           trocha: 1602, trochaTras: 1612, rangoAncho: [1830, 1920], rangoTrocha: [1565, 1636], rangoTrochaTras: [1570, 1681],
            idea: 'Postura alta: mucha altura libre al suelo y menos ruedas entre ejes, porque la rueda mide más.' },
   sport: { nombre: 'Deportivo', llanta: 19, neumatico: 255, perfil: 35, despeje: 120,
            ejes: 3.9, volDel: 1.25, volTras: 1.3, alto: 1.96, ancho: 1842,
+           trocha: 1578, trochaTras: 1552, rangoAncho: [1735, 1934], rangoTrocha: [1495, 1647], rangoTrochaTras: [1505, 1642],
            idea: 'Capó largo, cabina baja y retrasada, techo que cae en una sola línea hasta la cola.' }
 };
 
@@ -411,7 +510,27 @@ const CONTROLES_PROPORCION = [
   { clave: 'volDel', nombre: 'Voladizo delantero', min: 600, max: 1300 },
   { clave: 'volTras', nombre: 'Voladizo trasero', min: 500, max: 1400 },
   { clave: 'alto', nombre: 'Altura total', min: 1100, max: 2000 },
-  { clave: 'ancho', nombre: 'Ancho total', min: 1600, max: 2200 }
+  { clave: 'ancho', nombre: 'Ancho total', min: 1600, max: 2200, rango: 'rangoAncho' }
+];
+
+// Sliders de frente y ruedas. La distancia entre ruedas sale de la base de 40 autos. La nariz, los hombros y
+// el techo parten de valores provisionales. medida() entrega el resultado en mm.
+// La curva de la nariz no pasa más allá del voladizo, para no chocar con la rueda.
+const largoNariz = (a) => Math.min(a.narizLargo, a.volDel * 0.95);
+
+const CONTROLES_FRENTE = [
+  { clave: 'trocha', nombre: 'Distancia entre ruedas delanteras', min: 1300, max: 1800, paso: 1, rango: 'rangoTrocha',
+    medida: (a) => a.trocha },
+  { clave: 'trochaTras', nombre: 'Distancia entre ruedas traseras', min: 1300, max: 1800, paso: 1, rango: 'rangoTrochaTras',
+    medida: (a) => a.trochaTras },
+  { clave: 'narizAncho', nombre: 'Ancho de la nariz', min: 40, max: 95, paso: 1, unidad: ' %',
+    medida: (a) => a.ancho * a.narizAncho / 100 },
+  { clave: 'narizLargo', nombre: 'Largo de la curva de la nariz', min: 200, max: 1100,
+    medida: (a) => largoNariz(a) },
+  { clave: 'hombros', nombre: 'Altura de los hombros', min: 35, max: 70, paso: 1, unidad: ' %',
+    medida: (a) => a.despeje + (a.alto - a.despeje) * a.hombros / 100 },
+  { clave: 'techo', nombre: 'Ancho del techo', min: 55, max: 95, paso: 1, unidad: ' %',
+    medida: (a) => a.ancho * a.techo / 100 }
 ];
 
 // 2) ESTADO: los valores actuales del auto ----------------------
@@ -430,8 +549,11 @@ function cargarTipologia(clave) {
   auto = {
     llanta: t.llanta, neumatico: t.neumatico, perfil: t.perfil, despeje: t.despeje,
     ejes: t.ejes * D, volDel: t.volDel * D, volTras: t.volTras * D, alto: t.alto * D,
-    ancho: t.ancho
+    ancho: t.ancho, trocha: t.trocha, trochaTras: t.trochaTras,
+    narizAncho: 62, narizLargo: 660, hombros: 50, techo: 74
   };
+  // La curva parte con el largo que tenía la regla provisional
+  auto.narizLargo = Math.round(Math.min((auto.volDel + auto.ejes + auto.volTras) * 0.15, auto.volDel * 0.8) / 5) * 5;
 }
 
 // 3) FORMATO: escribir números en español ------------------------
@@ -538,17 +660,15 @@ function dibujarPerfil(verRuedas) {
 // 5) DIBUJO DEL FRENTE --------------------------------------------
 // Sección provisional. La misma regla dibuja el frente y arma el modelo 3D.
 
-const LINEA_HOMBROS = 0.5;   // altura de los hombros, como fracción de la carrocería
-const ANGOSTA_TECHO = 0.26;  // cuánto se angosta la cabina al llegar al techo
-
 // Recorre media sección del auto: desde el costado hasta el centro del techo.
 // h: medio ancho. base: donde parte el costado. sup: altura superior.
-function contornoSeccion(h, base, sup, hombros, altoMaximo) {
+// anchoTecho: ancho del techo como fracción del ancho total.
+function contornoSeccion(h, base, sup, hombros, altoMaximo, anchoTecho) {
   const tope = Math.max(sup, base + 30);
   const zona = Math.max(base, Math.min(hombros, tope - 30));
   const a = tope - zona;
   const avance = Math.min(1, a / Math.max(1, altoMaximo - hombros));
-  const t = 1 - ANGOSTA_TECHO * avance;       // ancho del techo respecto del costado
+  const t = 1 - (1 - anchoTecho) * avance;    // la cabina se angosta al subir
   const puntos = [];
 
   for (let i = 0; i < 3; i++) puntos.push([h, base + (zona - base) * i / 3]);
@@ -575,9 +695,9 @@ function dibujarFrente(verRuedas) {
   const a = auto, D = diametro(a);
   const cx = 168, w = a.ancho / 2, H = a.alto, g = a.despeje;
   const px = (v) => fijo(cx + v * ESCALA);
-  const hombros = g + (H - g) * LINEA_HOMBROS;
+  const hombros = g + (H - g) * a.hombros / 100;
 
-  const media = contornoSeccion(w, g + 90, H, hombros, H);
+  const media = contornoSeccion(w, g + 90, H, hombros, H, a.techo / 100);
   const subir = media.map((q) => `L${px(q[0])} ${fijo(Y(q[1]))}`).join(' ');
   const bajar = media.slice().reverse().map((q) => `L${px(-q[0])} ${fijo(Y(q[1]))}`).join(' ');
   const d = `M${px(-w * 0.9)} ${fijo(Y(g))} L${px(w * 0.9)} ${fijo(Y(g))} ` +
@@ -585,7 +705,7 @@ function dibujarFrente(verRuedas) {
     `Q${px(-w)} ${fijo(Y(g))} ${px(-w * 0.9)} ${fijo(Y(g))} Z`;
 
   const ta = a.neumatico * ESCALA, alto = D * ESCALA;
-  const borde = Math.min(w - a.neumatico / 2 - 10, w);
+  const borde = a.trocha / 2;   // centro de cada rueda
   const goma = (s) => `<rect class="goma" x="${fijo(cx + s * borde * ESCALA - ta / 2)}" y="${fijo(Y(D))}" width="${fijo(ta)}" height="${fijo(alto)}" rx="4"></rect>`;
 
   let h = `<line class="suelo" x1="0" x2="360" y1="${SUELO}" y2="${SUELO}"></line>`;
@@ -593,6 +713,10 @@ function dibujarFrente(verRuedas) {
 
   if (verRuedas) {
     h += cota(cx - w * ESCALA, cx + w * ESCALA, SUELO + 14, dos(a.ancho / D), 'ancho');
+    // Distancia entre los centros de las dos ruedas
+    const izq = fijo(cx - borde * ESCALA), der = fijo(cx + borde * ESCALA), yT = SUELO + 62;
+    h += `<path class="cota-trocha" d="M${izq} ${SUELO}V${yT + 6}M${der} ${SUELO}V${yT + 6}M${izq} ${yT}H${der}"></path>`;
+    h += `<text class="ruedas-texto" x="${cx}" y="${yT + 19}">entre ruedas ${dos(a.trocha / D)}</text>`;
     const x = fijo(cx + w * ESCALA + 16), y1 = fijo(Y(0)), y2 = fijo(Y(H));
     h += `<path class="cota" d="M${+x - 6} ${y1}H${+x + 6}M${+x - 6} ${y2}H${+x + 6}M${x} ${y1}V${y2}"></path>`;
     h += `<text class="valor" x="${+x + 2}" y="${fijo(Y(H) - 10)}">${dos(a.alto / D)}</text>`;
@@ -600,7 +724,65 @@ function dibujarFrente(verRuedas) {
   document.getElementById('dibujo-frente').innerHTML = h;
 }
 
-// 6) MODELO 3D --------------------------------------------------------
+// 6) VISTA SUPERIOR ----------------------------------------------------
+
+// Ancho del auto en cada punto x, como fracción de su ancho total.
+// La vista superior y el modelo 3D usan esta misma regla.
+function plantaAuto(a) {
+  const largo = a.volDel + a.ejes + a.volTras;
+  const zonaDel = largoNariz(a);
+  const zonaTras = Math.min(largo * 0.11, a.volTras * 0.8);
+  const redondeo = (d) => Math.sqrt(Math.max(0, 1 - (1 - d) * (1 - d)));
+  const nariz = a.narizAncho / 100;
+  return (x) => {
+    if (x < zonaDel) return nariz + (1 - nariz) * redondeo(x / zonaDel);
+    if (largo - x < zonaTras) return 0.68 + 0.32 * redondeo((largo - x) / zonaTras);
+    return 1;
+  };
+}
+
+function dibujarSuperior(verRuedas) {
+  const a = auto, D = diametro(a), largo = a.volDel + a.ejes + a.volTras;
+  const cz = 165, planta = plantaAuto(a), w = a.ancho / 2;
+  const Z = (z) => cz + z * ESCALA;
+  const xs = [];
+  for (let i = 0; i <= 120; i++) xs.push(largo * i / 120);
+
+  const lado = xs.map((x) => `${fijo(X(x))} ${fijo(Z(w * planta(x)))}`);
+  const otro = xs.slice().reverse().map((x) => `${fijo(X(x))} ${fijo(Z(-w * planta(x)))}`);
+
+  let h = `<path class="cuerpo" d="M${lado.join(' L')} L${otro.join(' L')} Z"></path>`;
+
+  // Contorno del techo, donde la silueta supera la mitad de la cabina
+  const superior = SILUETAS.u.map((u, i) => [posicion(u, a.volDel, a.volDel + a.ejes, largo), alturasSilueta()[i] * a.alto]);
+  const hombros = a.despeje + (a.alto - a.despeje) * a.hombros / 100;
+  const limite = hombros + (a.alto - hombros) * 0.72;
+  const techo = xs.filter((x) => interpolar(superior, x) >= limite);
+  if (techo.length > 1) {
+    const r = a.techo / 100;
+    const ida = techo.map((x) => `${fijo(X(x))} ${fijo(Z(w * r * planta(x)))}`);
+    const vuelta = techo.slice().reverse().map((x) => `${fijo(X(x))} ${fijo(Z(-w * r * planta(x)))}`);
+    h += `<path class="techo-plano" d="M${ida.join(' L')} L${vuelta.join(' L')} Z"></path>`;
+  }
+
+  if (verRuedas) {
+    // Ruedas bajo la carrocería
+    const ancho = a.neumatico * ESCALA;
+    [[a.volDel, a.trocha], [a.volDel + a.ejes, a.trochaTras]].forEach(([x, trocha]) => [-1, 1].forEach((s) => {
+      h += `<rect class="guia" x="${fijo(X(x - D / 2))}" y="${fijo(Z(s * trocha / 2) - ancho / 2)}" width="${fijo(D * ESCALA)}" height="${fijo(ancho)}"></rect>`;
+    }));
+    // Medidas
+    const nariz = w * planta(0), xCota = X(0) - 14, xAncho = X(largo) + 14;
+    h += `<path class="cota" d="M${xCota} ${fijo(Z(-nariz))}V${fijo(Z(nariz))}M${xCota - 6} ${fijo(Z(-nariz))}h12M${xCota - 6} ${fijo(Z(nariz))}h12"></path>`;
+    h += `<text class="valor" x="${xCota - 6}" y="${fijo(Z(-nariz) - 9)}">${dos(2 * nariz / D)}</text>`;
+    h += `<path class="cota" d="M${fijo(xAncho)} ${fijo(Z(-w))}V${fijo(Z(w))}M${fijo(xAncho - 6)} ${fijo(Z(-w))}h12M${fijo(xAncho - 6)} ${fijo(Z(w))}h12"></path>`;
+    h += `<text class="valor" x="${fijo(xAncho + 2)}" y="${fijo(Z(-w) - 9)}">${dos(a.ancho / D)}</text>`;
+    h += cota(X(0), X(largoNariz(a)), 326, dos(largoNariz(a) / D), 'curva de la nariz');
+  }
+  document.getElementById('dibujo-superior').innerHTML = h;
+}
+
+// 7) MODELO 3D --------------------------------------------------------
 // Un modelo 3D es una lista de vértices (puntos) y caras (triángulos que los unen).
 // La carrocería se arma como un loft: secciones repetidas de adelante hacia atrás.
 // Ejes: x = largo, y = altura, z = ancho. Todas las medidas están en mm.
@@ -661,7 +843,7 @@ function crearCarroceria(a) {
   const D = diametro(a), ejeDel = a.volDel, ejeTras = a.volDel + a.ejes, largo = ejeTras + a.volTras;
   const H = a.alto, g = a.despeje, medioAncho = a.ancho / 2;
   const s = SILUETAS.tipos[tipo], alturas = alturasSilueta();
-  const hombros = g + (H - g) * LINEA_HOMBROS;
+  const hombros = g + (H - g) * a.hombros / 100;
 
   // Contornos del perfil: los mismos de la vista lateral
   const superior = SILUETAS.u.map((u, i) => [posicion(u, ejeDel, ejeTras, largo), alturas[i] * H]);
@@ -682,20 +864,14 @@ function crearCarroceria(a) {
     .filter((x, i, lista) => i === 0 || x - lista[i - 1] > 0.5);
 
   // El auto se angosta suavemente en los extremos, visto desde arriba
-  const zonaDel = Math.min(largo * 0.15, ejeDel * 0.8), zonaTras = Math.min(largo * 0.11, a.volTras * 0.8);
-  const planta = (x) => {
-    const redondeo = (d) => Math.sqrt(Math.max(0, 1 - (1 - d) * (1 - d)));
-    if (x < zonaDel) return 0.62 + 0.38 * redondeo(x / zonaDel);
-    if (largo - x < zonaTras) return 0.68 + 0.32 * redondeo((largo - x) / zonaTras);
-    return 1;
-  };
+  const planta = plantaAuto(a);
 
   // Cubierta de la rueda: el arco que se ve en la vista lateral
   const arco = (x) => [ejeDel, ejeTras].reduce((m, c) =>
     (Math.abs(x - c) < R ? Math.max(m, cy + Math.sqrt(R * R - (x - c) * (x - c))) : m), 0);
 
   const piso = [], pared = [], cielo = [], costado = [];
-  const interiorRueda = medioAncho - 15 - a.neumatico - 40;
+  const interiorRueda = Math.min(a.trocha, a.trochaTras) / 2 - a.neumatico / 2 - 40;
   xs.forEach((x) => {
     const h = medioAncho * planta(x), inf = interpolar(inferior, x), sup = interpolar(superior, x);
     const tope = Math.max(sup, inf + 30);
@@ -704,7 +880,7 @@ function crearCarroceria(a) {
     piso.push([0, 1, 2, 3].map((i) => [x, inf, interior * i / 3]));
     pared.push([[x, inf, interior], [x, techoRueda, interior]]);
     cielo.push([0, 1, 2].map((i) => [x, techoRueda, interior + (h - interior) * i / 2]));
-    costado.push(contornoSeccion(h, techoRueda, sup, hombros, H).map((q) => [x, q[1], q[0]]));
+    costado.push(contornoSeccion(h, techoRueda, sup, hombros, H, a.techo / 100).map((q) => [x, q[1], q[0]]));
   });
 
   const parte = nuevaParte('carroceria', 'cuerpo');
@@ -743,10 +919,10 @@ function crearCilindro(nombre, material, x, y, zCentro, radio, ancho) {
 }
 
 function crearModelo(a) {
-  const D = diametro(a), ejes = [['del', a.volDel], ['tras', a.volDel + a.ejes]];
-  const zRueda = a.ancho / 2 - 15 - a.neumatico / 2;
+  const D = diametro(a), ejes = [['del', a.volDel, a.trocha], ['tras', a.volDel + a.ejes, a.trochaTras]];
   const partes = [crearCarroceria(a)];
-  ejes.forEach(([eje, x]) => {
+  ejes.forEach(([eje, x, trocha]) => {
+    const zRueda = trocha / 2;
     [['der', 1], ['izq', -1]].forEach(([lado, signo]) => {
       partes.push(crearCilindro(`neumatico_${eje}_${lado}`, 'goma', x, D / 2, signo * zRueda, D / 2, a.neumatico));
       partes.push(crearCilindro(`llanta_${eje}_${lado}`, 'llanta', x, D / 2, signo * zRueda, a.llanta * 25.4 / 2, a.neumatico + 8));
@@ -777,7 +953,7 @@ function aOBJ(partes, nombreAuto) {
   return lineas.join('\n');
 }
 
-// 7) VISOR 3D: muestra el modelo en pantalla con Three.js ---------------
+// 8) VISOR 3D: muestra el modelo en pantalla con Three.js ---------------
 
 const visor = { escena: null, camara: null, render: null, controles: null, grupo: null, suelo: null };
 
@@ -786,15 +962,74 @@ function colorCSS(nombre) {
 }
 
 function dibujarVisor() {
-  if (visor.render) visor.render.render(visor.escena, visor.camara);
+  if (!visor.render) return;
+  visor.suelo.visible = visor.camara.position.y >= 0;   // bajo el auto, el suelo se oculta
+  visor.camara.updateMatrixWorld();
+  girarCubo();
+  visor.render.render(visor.escena, visor.camara);
 }
 
 function ajustarVisor() {
   if (!visor.render) return;
   const caja = porId('visor-3d');
   visor.render.setSize(caja.clientWidth, caja.clientHeight, false);
-  visor.camara.aspect = caja.clientWidth / Math.max(1, caja.clientHeight);
-  visor.camara.updateProjectionMatrix();
+  // Encuadre: la cámara paralela muestra un rectángulo de medidas fijas
+  const aspecto = caja.clientWidth / Math.max(1, caja.clientHeight);
+  const medio = Math.max(visor.tamano * 0.42, visor.tamano * 0.72 / aspecto);
+  visor.medio = medio;
+  visor.orto.left = -medio * aspecto;
+  visor.orto.right = medio * aspecto;
+  visor.orto.top = medio;
+  visor.orto.bottom = -medio;
+  visor.orto.updateProjectionMatrix();
+  visor.persp.aspect = aspecto;
+  visor.persp.updateProjectionMatrix();
+  dibujarVisor();
+}
+
+const ANGULO_PERSPECTIVA = 28;   // grados de apertura vertical de la cámara
+
+// Distancia a la que la perspectiva encuadra lo mismo que la ortográfica
+const distanciaPara = (medioVisible) => medioVisible / Math.tan(ANGULO_PERSPECTIVA / 2 * Math.PI / 180);
+
+// Ubica la cámara activa en una dirección, con el auto encuadrado completo.
+function encuadrar(direccion) {
+  const objetivo = visor.controles.target;
+  const rumbo = direccion.clone().normalize();
+  if (visor.camara === visor.orto) {
+    visor.orto.zoom = 1;
+    visor.orto.position.copy(objetivo).addScaledVector(rumbo, visor.tamano * 2.5);
+    visor.orto.updateProjectionMatrix();
+  } else {
+    visor.persp.position.copy(objetivo).addScaledVector(rumbo, distanciaPara(visor.medio));
+  }
+  visor.controles.update();
+}
+
+// Cambia de cámara sin mover el punto de vista ni el tamaño aparente del auto.
+function cambiarProyeccion(tipo) {
+  porId('ver-ortografica').setAttribute('aria-pressed', String(tipo === 'orto'));
+  porId('ver-perspectiva').setAttribute('aria-pressed', String(tipo === 'persp'));
+  const nueva = tipo === 'orto' ? visor.orto : visor.persp;
+  if (!visor.render || nueva === visor.camara) return;
+
+  const objetivo = visor.controles.target;
+  const rumbo = visor.camara.position.clone().sub(objetivo);
+  const visible = visor.camara === visor.orto
+    ? visor.medio / visor.orto.zoom
+    : rumbo.length() / distanciaPara(1);
+  rumbo.normalize();
+
+  if (nueva === visor.orto) {
+    visor.orto.zoom = visor.medio / visible;
+    visor.orto.position.copy(objetivo).addScaledVector(rumbo, visor.tamano * 2.5);
+    visor.orto.updateProjectionMatrix();
+  } else {
+    visor.persp.position.copy(objetivo).addScaledVector(rumbo, distanciaPara(visible));
+  }
+  visor.camara = nueva;
+  visor.controles.object = nueva;
+  visor.controles.update();
   dibujarVisor();
 }
 
@@ -805,7 +1040,11 @@ function iniciarVisor() {
   caja.appendChild(visor.render.domElement);
 
   visor.escena = new THREE.Scene();
-  visor.camara = new THREE.PerspectiveCamera(28, 16 / 9, 0.1, 100);
+  // Dos cámaras. Ortográfica: líneas paralelas, como la isométrica de Inventor.
+  // Perspectiva: lo lejano se ve más pequeño, como en una foto.
+  visor.orto = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+  visor.persp = new THREE.PerspectiveCamera(ANGULO_PERSPECTIVA, 16 / 9, 0.1, 100);
+  visor.camara = visor.orto;
   visor.escena.add(new THREE.HemisphereLight(0xffffff, 0x77807f, 0.62));
   const sol = new THREE.DirectionalLight(0xffffff, 0.42);
   sol.position.set(-3, 5, 4);
@@ -813,7 +1052,6 @@ function iniciarVisor() {
 
   visor.controles = new THREE.OrbitControls(visor.camara, visor.render.domElement);
   visor.controles.enableDamping = false;
-  visor.controles.maxPolarAngle = Math.PI / 2 - 0.02;   // la cámara no baja del suelo
   visor.controles.addEventListener('change', dibujarVisor);
 
   new ResizeObserver(ajustarVisor).observe(caja);
@@ -858,16 +1096,106 @@ function mostrarModelo(partes, a) {
   visor.escena.add(visor.suelo);
 
   const c = largo * metro;
+  visor.tamano = c;
   visor.controles.target.set(0, a.alto * 0.45 * metro, 0);
-  // En pantallas angostas la cámara se aleja para que el auto quepa completo
-  const caja = porId('visor-3d');
-  const alejar = Math.max(1, 1.7 * caja.clientHeight / Math.max(1, caja.clientWidth));
-  visor.camara.position.set(-c * 1.2 * alejar, c * 0.5 * alejar, c * 1.5 * alejar);
-  visor.controles.update();
+  visor.inicio = new THREE.Vector3(-c * 1.2, c * 0.5, c * 1.5);
   ajustarVisor();
+  encuadrar(visor.inicio);
+  dibujarVisor();
 }
 
-// 8) COMPILAR: reúne las vistas y el modelo del auto actual -------------
+// 9) CUBO DE VISTAS ----------------------------------------------------
+// Cada cara se divide en 9 zonas: centro = vista de cara, borde y esquina = vista
+// intermedia. La dirección es desde dónde mira la cámara, respecto del centro del auto.
+// En este modelo, la nariz del auto apunta hacia -x.
+
+const CARAS = [
+  { nombre: 'FRENTE', normal: [-1, 0, 0], derecha: [0, 0, 1], arriba: [0, 1, 0], css: 'rotateY(-90deg)' },
+  { nombre: 'ATRÁS', normal: [1, 0, 0], derecha: [0, 0, -1], arriba: [0, 1, 0], css: 'rotateY(90deg)' },
+  { nombre: 'IZQ', normal: [0, 0, 1], derecha: [1, 0, 0], arriba: [0, 1, 0], css: '' },
+  { nombre: 'DER', normal: [0, 0, -1], derecha: [-1, 0, 0], arriba: [0, 1, 0], css: 'rotateY(180deg)' },
+  { nombre: 'ARRIBA', normal: [0, 1, 0], derecha: [1, 0, 0], arriba: [0, 0, -1], css: 'rotateX(90deg)' },
+  { nombre: 'ABAJO', normal: [0, -1, 0], derecha: [1, 0, 0], arriba: [0, 0, 1], css: 'rotateX(-90deg)' }
+];
+
+function crearCubo() {
+  const cubo = porId('cubo');
+  CARAS.forEach((cara) => {
+    const placa = document.createElement('div');
+    placa.className = 'cara';
+    placa.style.transform = `${cara.css} translateZ(38.5px)`;
+    for (let fila = 1; fila >= -1; fila--) {
+      for (let col = -1; col <= 1; col++) {
+        const direccion = [0, 1, 2].map((k) => cara.normal[k] + col * cara.derecha[k] + fila * cara.arriba[k]);
+        const b = document.createElement('button');
+        b.type = 'button';
+        const centro = col === 0 && fila === 0;
+        b.tabIndex = centro ? 0 : -1;
+        const esquina = col !== 0 && fila !== 0;
+        b.setAttribute('aria-label', centro ? `Vista ${cara.nombre.toLowerCase()}` : esquina ? 'Vista isométrica' : 'Vista intermedia');
+        b.dataset.direccion = direccion.join(',');
+        b.addEventListener('click', () => irAVista(direccion));
+        // Al pasar el mouse se ilumina la zona completa: una esquina toca 3 caras y un borde 2
+        const marcar = (activa) => document.querySelectorAll(`.cara button[data-direccion="${b.dataset.direccion}"]`)
+          .forEach((zona) => zona.classList.toggle('activa', activa));
+        b.addEventListener('pointerenter', () => marcar(true));
+        b.addEventListener('pointerleave', () => marcar(false));
+        b.addEventListener('focus', () => marcar(true));
+        b.addEventListener('blur', () => marcar(false));
+        placa.appendChild(b);
+      }
+    }
+    const nombre = document.createElement('span');
+    nombre.className = 'cara-nombre';
+    nombre.textContent = cara.nombre;
+    placa.appendChild(nombre);
+    cubo.appendChild(placa);
+  });
+  porId('vista-inicio').addEventListener('click', () => { encuadrar(visor.inicio); dibujarVisor(); });
+  porId('ver-ortografica').addEventListener('click', () => cambiarProyeccion('orto'));
+  porId('ver-perspectiva').addEventListener('click', () => cambiarProyeccion('persp'));
+}
+
+// Copia la rotación de la cámara en el cubo. CSS mide y hacia abajo y 3D hacia arriba.
+function girarCubo() {
+  const e = visor.camara.matrixWorldInverse.elements;
+  const s = [1, -1, 1, 1];
+  const m = [];
+  for (let col = 0; col < 3; col++) {
+    for (let fila = 0; fila < 3; fila++) m.push(e[col * 4 + fila] * s[col] * s[fila]);
+    m.push(0);
+  }
+  m.push(0, 0, 0, 1);
+  porId('cubo').style.transform = `matrix3d(${m.map((n) => n.toFixed(5)).join(',')})`;
+}
+
+// Lleva la cámara a una dirección con una transición corta.
+function irAVista(direccion) {
+  const objetivo = visor.controles.target;
+  const inicio = new THREE.Spherical().setFromVector3(visor.camara.position.clone().sub(objetivo));
+  const destino = new THREE.Spherical().setFromVector3(new THREE.Vector3().fromArray(direccion));
+  destino.radius = inicio.radius;
+  destino.makeSafe();
+  if (Math.abs(direccion[0]) < 1e-6 && Math.abs(direccion[2]) < 1e-6) destino.theta = 0;  // vista recta desde arriba o abajo
+
+  let giro = destino.theta - inicio.theta;
+  if (giro > Math.PI) giro -= 2 * Math.PI;
+  if (giro < -Math.PI) giro += 2 * Math.PI;
+
+  const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const duracion = quieto ? 0 : 350, comienzo = performance.now();
+  const paso = (ahora) => {
+    const t = duracion ? Math.min(1, (ahora - comienzo) / duracion) : 1;
+    const suave = t * t * (3 - 2 * t);
+    const lugar = new THREE.Spherical(inicio.radius, inicio.phi + (destino.phi - inicio.phi) * suave, inicio.theta + giro * suave);
+    visor.camara.position.setFromSpherical(lugar).add(objetivo);
+    visor.controles.update();
+    if (t < 1) requestAnimationFrame(paso);
+  };
+  requestAnimationFrame(paso);
+}
+
+// 10) COMPILAR: reúne las vistas y el modelo del auto actual -------------
 
 let compilado = null;
 
@@ -882,6 +1210,7 @@ function compilar() {
   };
   porId('vista-lateral').innerHTML = porId('dibujo-perfil').innerHTML;
   porId('vista-frontal').innerHTML = porId('dibujo-frente').innerHTML;
+  porId('vista-superior').innerHTML = porId('dibujo-superior').innerHTML;
   porId('resultado').hidden = false;
 
   try {
@@ -915,7 +1244,7 @@ function descargarOBJ() {
   setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
 }
 
-// 9) INTERFAZ: construir y actualizar lo que se ve -------------------
+// 11) INTERFAZ: construir y actualizar lo que se ve -------------------
 
 const porId = (id) => document.getElementById(id);
 
@@ -924,7 +1253,7 @@ function crearControl(c, contenedor) {
   caja.className = 'control';
   caja.innerHTML = `<div class="fila"><label for="s-${c.clave}">${c.nombre}</label><output id="v-${c.clave}" for="s-${c.clave}"></output></div>` +
     `<input type="range" id="s-${c.clave}" min="${c.min}" max="${c.max}" step="${c.paso || 5}">` +
-    (c.paso ? '' : `<small id="m-${c.clave}"></small>`);
+    (c.paso && !c.medida ? '' : `<small id="m-${c.clave}"></small>`);
   contenedor.appendChild(caja);
   // "input" ocurre cada vez que el estudiante mueve el slider
   porId('s-' + c.clave).addEventListener('input', (e) => {
@@ -936,6 +1265,7 @@ function crearControl(c, contenedor) {
 function crearInterfaz() {
   CONTROLES_RUEDA.forEach((c) => crearControl(c, porId('controles-rueda')));
   CONTROLES_PROPORCION.forEach((c) => crearControl(c, porId('controles-proporcion')));
+  CONTROLES_FRENTE.forEach((c) => crearControl(c, porId('controles-frente')));
 
   Object.keys(TIPOLOGIAS).forEach((clave) => {
     const b = document.createElement('button');
@@ -949,7 +1279,15 @@ function crearInterfaz() {
   porId('ver-ruedas').addEventListener('change', actualizar);
   porId('volver').addEventListener('click', () => { cargarTipologia(tipo); actualizar(); });
   porId('compilar').addEventListener('click', compilar);
+  crearCubo();
   porId('descargar-obj').addEventListener('click', descargarOBJ);
+}
+
+// Texto con el rango de autos reales de la tipología actual
+function rangoReal(c) {
+  if (!c.rango) return '';
+  const [desde, hasta] = TIPOLOGIAS[tipo][c.rango];
+  return ` · real ${desde.toLocaleString('es-CL')}–${hasta.toLocaleString('es-CL')}`;
 }
 
 function actualizar() {
@@ -962,7 +1300,15 @@ function actualizar() {
   CONTROLES_PROPORCION.forEach((c) => {
     porId('s-' + c.clave).value = a[c.clave];
     porId('v-' + c.clave).textContent = dos(a[c.clave] / D) + ' ruedas';
-    porId('m-' + c.clave).textContent = mm(a[c.clave]);
+    porId('m-' + c.clave).textContent = mm(a[c.clave]) + rangoReal(c);
+  });
+
+  CONTROLES_FRENTE.forEach((c) => {
+    porId('s-' + c.clave).value = a[c.clave];
+    const enRuedas = dos(c.medida(a) / D) + ' ruedas';
+    porId('v-' + c.clave).textContent = c.unidad ? a[c.clave] + c.unidad : enRuedas;
+    const limitada = c.clave === 'narizLargo' && a.narizLargo > largoNariz(a) ? ' · limitada por el voladizo' : '';
+    porId('m-' + c.clave).textContent = (c.unidad ? `${enRuedas} · ${mm(c.medida(a))}` : mm(c.medida(a))) + rangoReal(c) + limitada;
   });
 
   document.querySelectorAll('.tipologias button').forEach((b) => {
@@ -979,15 +1325,16 @@ function actualizar() {
     `<div class="medida"><span>${f[0]}</span><strong>${f[1]}</strong><span>${f[2]}</span></div>`).join('');
 
   porId('nota').innerHTML = `<b>${TIPOLOGIAS[tipo].nombre}.</b> ${TIPOLOGIAS[tipo].idea} ` +
-    'La forma del frente es provisional.';
+    'El ancho y la distancia entre ruedas vienen de 10 autos reales. La nariz, los hombros y el techo parten de valores provisionales.';
 
   const ver = porId('ver-ruedas').checked;
   dibujarPerfil(ver);
   dibujarFrente(ver);
+  dibujarSuperior(ver);
   actualizarEstado();
 }
 
-// 10) INICIO ---------------------------------------------------------
+// 12) INICIO ---------------------------------------------------------
 crearInterfaz();
 cargarTipologia('sedan');
 actualizar();
