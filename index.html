@@ -25,6 +25,7 @@
   --neumatico: #23292b;
   --llanta: #9fa9ac;
   --medida: #b3470e;
+  --sobre-medida: #ffffff;
   --titulo: "Barlow Condensed", "Arial Narrow", sans-serif;
   --texto: "IBM Plex Sans", system-ui, sans-serif;
   --numero: "IBM Plex Mono", ui-monospace, monospace;
@@ -33,13 +34,13 @@
   :root:not([data-theme="light"]) {
     --papel: #12171a; --plano: #1a2124; --tinta: #e8eceb; --tinta-suave: #a3afb2;
     --linea: #364145; --carroceria: #4a5659; --neumatico: #0a0d0e; --llanta: #7c888b;
-    --medida: #f08a4b; color-scheme: dark;
+    --medida: #f08a4b; --sobre-medida: #1a1208; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --papel: #12171a; --plano: #1a2124; --tinta: #e8eceb; --tinta-suave: #a3afb2;
   --linea: #364145; --carroceria: #4a5659; --neumatico: #0a0d0e; --llanta: #7c888b;
-  --medida: #f08a4b; color-scheme: dark;
+  --medida: #f08a4b; --sobre-medida: #1a1208; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -198,6 +199,68 @@ input[type="range"] {
   cursor: pointer;
 }
 
+/* Botón Compilar y resultado */
+.compilar {
+  min-height: 48px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--medida);
+  color: var(--sobre-medida);
+  font: 600 20px var(--titulo);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.resultado {
+  background: var(--plano);
+  border: 1px solid var(--linea);
+  border-radius: 4px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.resultado-cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+.resultado h2 { margin: 0; font: 600 24px/1.1 var(--titulo); letter-spacing: 0.02em; }
+.resultado p { margin: 2px 0 0; font-size: 14px; color: var(--tinta-suave); }
+.resultado .aviso { color: var(--medida); font-weight: 600; }
+.descargar {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--tinta);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--tinta);
+  font: 500 14px var(--texto);
+  cursor: pointer;
+}
+.resultado-vistas { display: grid; grid-template-columns: minmax(0, 840fr) minmax(0, 360fr); gap: 12px; align-items: start; }
+.resultado figure { margin: 0; min-width: 0; }
+.resultado figcaption {
+  margin-bottom: 4px;
+  font: 600 14px var(--titulo);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-suave);
+}
+.resultado-vistas svg { display: block; width: 100%; height: auto; border: 1px solid var(--linea); }
+#visor-3d {
+  height: clamp(300px, 46vw, 520px);
+  border: 1px solid var(--linea);
+  cursor: grab;
+  touch-action: none;
+}
+#visor-3d:active { cursor: grabbing; }
+#visor-3d canvas { display: block; width: 100%; height: 100%; }
+.sin-3d { padding: 16px; color: var(--tinta-suave); }
+
 /* Dibujo */
 .suelo { stroke: var(--tinta-suave); stroke-width: 1.5; }
 .cuerpo { fill: var(--carroceria); stroke: var(--tinta); stroke-width: 2; stroke-linejoin: round; }
@@ -214,12 +277,17 @@ input[type="range"] {
   .perfil .valor, .perfil .ruedas-texto { font-size: 28px; }
   .perfil .rotulo { display: none; }
   .frente svg { max-width: 260px; margin: 0 auto; }
+  .panel { order: 1; }
+  .resultado { order: 2; scroll-margin-top: 215px; }
+  .resultado-vistas { grid-template-columns: minmax(0, 1fr); }
+  .resultado-vistas figure:last-child svg { max-width: 260px; }
 }
 
 /* Pantallas anchas: dos columnas */
 @media (min-width: 980px) {
   .estudio { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
-  .columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; position: sticky; top: 12px; }
+  .columna { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .panel { position: sticky; top: 12px; max-height: calc(100vh - 24px); overflow-y: auto; }
   .vistas { display: flex; gap: 16px; align-items: stretch; }
   /* El ancho de cada vista es proporcional a su dibujo: así comparten escala */
   .perfil { position: static; flex: 840 1 0; min-width: 0; }
@@ -233,7 +301,7 @@ input[type="range"] {
   <header class="cabecera">
     <div>
       <h1>Estudio de proporciones</h1>
-      <p class="version">v0.1 · todo se mide en ruedas</p>
+      <p class="version">v0.2 · todo se mide en ruedas</p>
     </div>
     <nav class="tipologias" id="tipologias" aria-label="Tipología de vehículo"></nav>
   </header>
@@ -252,6 +320,30 @@ input[type="range"] {
       </div>
       <section class="medidas" id="medidas" aria-label="Resumen de medidas"></section>
       <p class="nota" id="nota"></p>
+
+      <section class="resultado" id="resultado" aria-labelledby="titulo-resultado" hidden>
+        <div class="resultado-cabecera">
+          <div>
+            <h2 id="titulo-resultado">Auto compilado</h2>
+            <p id="estado-compilado"></p>
+          </div>
+          <button type="button" class="descargar" id="descargar-obj">Descargar OBJ</button>
+        </div>
+        <figure>
+          <figcaption>Modelo 3D · arrastra para girar, rueda o pellizco para acercar</figcaption>
+          <div id="visor-3d"></div>
+        </figure>
+        <div class="resultado-vistas">
+          <figure>
+            <figcaption>Vista lateral</figcaption>
+            <svg id="vista-lateral" viewBox="0 0 840 420" role="img" aria-label="Vista lateral compilada"></svg>
+          </figure>
+          <figure>
+            <figcaption>Vista frontal</figcaption>
+            <svg id="vista-frontal" viewBox="0 0 360 420" role="img" aria-label="Vista frontal compilada"></svg>
+          </figure>
+        </div>
+      </section>
     </div>
 
     <aside class="panel">
@@ -263,10 +355,15 @@ input[type="range"] {
         <input type="checkbox" id="ver-ruedas" checked>
         Mostrar medidas en ruedas
       </label>
+      <button type="button" class="compilar" id="compilar">Compilar</button>
       <button type="button" class="volver" id="volver">Volver a la tipología</button>
     </aside>
   </div>
 </main>
+
+<!-- Three.js: librería que muestra objetos 3D en el navegador -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
 /* ==========================================================
@@ -284,7 +381,7 @@ input[type="range"] {
 const SILUETAS = {"u":[0.0,0.0833,0.1667,0.25,0.3333,0.4167,0.5,0.5833,0.6667,0.75,0.8333,0.9167,1.0,1.0278,1.0556,1.0833,1.1111,1.1389,1.1667,1.1944,1.2222,1.25,1.2778,1.3056,1.3333,1.3611,1.3889,1.4167,1.4444,1.4722,1.5,1.5278,1.5556,1.5833,1.6111,1.6389,1.6667,1.6944,1.7222,1.75,1.7778,1.8056,1.8333,1.8611,1.8889,1.9167,1.9444,1.9722,2.0,2.0833,2.1667,2.25,2.3333,2.4167,2.5,2.5833,2.6667,2.75,2.8333,2.9167,3.0],"tipos":{"sedan":{"v":[0.423,0.481,0.533,0.565,0.587,0.605,0.62,0.633,0.645,0.657,0.669,0.677,0.683,0.689,0.695,0.701,0.706,0.712,0.722,0.737,0.76,0.79,0.821,0.85,0.879,0.908,0.936,0.957,0.972,0.981,0.988,0.993,0.995,0.997,0.999,1.0,1.0,0.999,0.997,0.995,0.991,0.987,0.981,0.974,0.963,0.95,0.935,0.919,0.902,0.884,0.866,0.846,0.827,0.81,0.795,0.785,0.777,0.763,0.714,0.61,0.499],"b":[0.26,0.198,0.153,0.134,0.125,0.117,0.107,0.092,0.068,0.04,0.018,0.007,0.004,0.01,0.029,0.063,0.102,0.125,0.132,0.134,0.135,0.136,0.137,0.138,0.138,0.138,0.138,0.138,0.138,0.139,0.14,0.141,0.141,0.142,0.144,0.145,0.145,0.146,0.147,0.147,0.148,0.148,0.146,0.135,0.109,0.069,0.033,0.013,0.007,0.013,0.033,0.071,0.121,0.161,0.179,0.188,0.196,0.208,0.228,0.275,0.339]},"hatch":{"v":[0.458,0.502,0.542,0.57,0.591,0.607,0.62,0.633,0.645,0.655,0.664,0.673,0.681,0.69,0.697,0.704,0.713,0.725,0.741,0.764,0.791,0.818,0.845,0.871,0.896,0.92,0.941,0.957,0.97,0.98,0.986,0.992,0.996,0.999,1.0,1.0,1.0,1.0,0.999,0.997,0.996,0.995,0.992,0.989,0.986,0.982,0.977,0.972,0.968,0.963,0.956,0.943,0.92,0.879,0.836,0.804,0.776,0.737,0.661,0.551,0.462],"b":[0.262,0.198,0.153,0.135,0.126,0.118,0.111,0.095,0.067,0.036,0.016,0.006,0.004,0.008,0.024,0.054,0.093,0.12,0.125,0.122,0.122,0.124,0.127,0.13,0.134,0.137,0.139,0.141,0.144,0.145,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.146,0.147,0.148,0.149,0.15,0.144,0.121,0.084,0.053,0.035,0.028,0.03,0.041,0.06,0.089,0.131,0.172,0.192,0.202,0.215,0.233,0.26,0.291]},"suv":{"v":[0.409,0.496,0.565,0.598,0.613,0.624,0.635,0.644,0.653,0.66,0.666,0.673,0.68,0.686,0.69,0.697,0.708,0.725,0.749,0.774,0.797,0.822,0.847,0.872,0.895,0.916,0.934,0.949,0.962,0.971,0.979,0.985,0.989,0.993,0.995,0.997,0.999,1.0,1.0,1.0,1.0,1.0,0.999,0.997,0.995,0.994,0.993,0.99,0.986,0.979,0.969,0.96,0.95,0.926,0.883,0.838,0.796,0.746,0.654,0.518,0.412],"b":[0.264,0.21,0.171,0.155,0.148,0.139,0.124,0.096,0.063,0.035,0.018,0.008,0.006,0.01,0.023,0.05,0.087,0.12,0.138,0.143,0.144,0.144,0.143,0.143,0.144,0.145,0.145,0.145,0.145,0.146,0.146,0.147,0.147,0.147,0.148,0.147,0.147,0.147,0.148,0.148,0.148,0.147,0.144,0.129,0.095,0.055,0.026,0.011,0.007,0.01,0.023,0.049,0.088,0.132,0.168,0.185,0.193,0.203,0.22,0.252,0.294]},"sport":{"v":[0.479,0.509,0.54,0.565,0.587,0.608,0.627,0.642,0.654,0.665,0.675,0.684,0.691,0.697,0.702,0.706,0.707,0.709,0.715,0.726,0.745,0.771,0.799,0.827,0.854,0.88,0.904,0.926,0.946,0.963,0.976,0.986,0.994,0.998,0.999,0.999,0.997,0.994,0.989,0.983,0.978,0.972,0.965,0.955,0.942,0.926,0.912,0.9,0.887,0.875,0.863,0.849,0.836,0.822,0.807,0.791,0.773,0.756,0.731,0.67,0.581],"b":[0.24,0.178,0.136,0.12,0.112,0.106,0.098,0.082,0.057,0.031,0.013,0.004,0.003,0.009,0.025,0.053,0.087,0.111,0.12,0.123,0.123,0.124,0.126,0.127,0.128,0.128,0.129,0.131,0.133,0.135,0.137,0.137,0.137,0.139,0.14,0.142,0.142,0.143,0.145,0.146,0.147,0.146,0.142,0.133,0.112,0.078,0.047,0.03,0.025,0.027,0.04,0.068,0.112,0.156,0.181,0.186,0.19,0.202,0.232,0.299,0.387]}}};
 
 // Punto de partida de cada tipología. Las proporciones son medianas de la
-// base de 40 autos. "ancho" está en mm y es provisional.
+// base de 40 autos. "ancho" es la mediana en mm, sin espejos.
 // ejes, voladizos y alto están en ruedas.
 const TIPOLOGIAS = {
   sedan: { nombre: 'Sedán', llanta: 17, neumatico: 215, perfil: 55, despeje: 148,
@@ -386,12 +483,18 @@ function cota(x1, x2, y, valor, nombre) {
     `<text class="rotulo" x="${fijo(m)}" y="${y + 42}">${nombre}</text>`;
 }
 
+// Alturas de la silueta, de 0 a 1, ajustadas para que el techo llegue a 1.
+function alturasSilueta() {
+  const v = SILUETAS.tipos[tipo].v;
+  const techo = Math.max.apply(null, v);
+  return v.map((n) => Math.max(0.05, n / techo));
+}
+
 function dibujarPerfil(verRuedas) {
   const a = auto, D = diametro(a);
   const ejeDel = a.volDel, ejeTras = a.volDel + a.ejes, largo = ejeTras + a.volTras, H = a.alto;
   const s = SILUETAS.tipos[tipo];
-  const techo = Math.max.apply(null, s.v);
-  const alturas = s.v.map((v) => Math.max(0.05, v / techo));
+  const alturas = alturasSilueta();
 
   // Contorno superior
   let d = curva(SILUETAS.u.map((u, i) => [X(posicion(u, ejeDel, ejeTras, largo)), Y(alturas[i] * H)]));
@@ -433,28 +536,53 @@ function dibujarPerfil(verRuedas) {
 }
 
 // 5) DIBUJO DEL FRENTE --------------------------------------------
-// Sección provisional: un primer volumen que el modelo 3D usará más adelante.
+// Sección provisional. La misma regla dibuja el frente y arma el modelo 3D.
+
+const LINEA_HOMBROS = 0.5;   // altura de los hombros, como fracción de la carrocería
+const ANGOSTA_TECHO = 0.26;  // cuánto se angosta la cabina al llegar al techo
+
+// Recorre media sección del auto: desde el costado hasta el centro del techo.
+// h: medio ancho. base: donde parte el costado. sup: altura superior.
+function contornoSeccion(h, base, sup, hombros, altoMaximo) {
+  const tope = Math.max(sup, base + 30);
+  const zona = Math.max(base, Math.min(hombros, tope - 30));
+  const a = tope - zona;
+  const avance = Math.min(1, a / Math.max(1, altoMaximo - hombros));
+  const t = 1 - ANGOSTA_TECHO * avance;       // ancho del techo respecto del costado
+  const puntos = [];
+
+  for (let i = 0; i < 3; i++) puntos.push([h, base + (zona - base) * i / 3]);
+
+  // Del hombro al techo: una curva de Bézier cúbica
+  const p0 = [h, zona], c1 = [h, zona + a * 0.3];
+  const c2 = [Math.min(h, h * t * 1.04), tope - a * 0.45], p3 = [h * t, tope - a * 0.1];
+  for (let i = 0; i < 10; i++) {
+    const u = i / 10, w = 1 - u;
+    puntos.push([0, 1].map((k) => w * w * w * p0[k] + 3 * w * w * u * c1[k] + 3 * w * u * u * c2[k] + u * u * u * p3[k]));
+  }
+  // Esquina redondeada del techo
+  const c = [h * t * 0.97, tope], p4 = [h * t * 0.78, tope];
+  for (let i = 0; i < 6; i++) {
+    const u = i / 6, w = 1 - u;
+    puntos.push([0, 1].map((k) => w * w * p3[k] + 2 * w * u * c[k] + u * u * p4[k]));
+  }
+  // Tramo plano hasta el centro
+  for (let i = 0; i < 6; i++) puntos.push([p4[0] * (1 - i / 5), tope]);
+  return puntos;
+}
 
 function dibujarFrente(verRuedas) {
   const a = auto, D = diametro(a);
   const cx = 168, w = a.ancho / 2, H = a.alto, g = a.despeje;
   const px = (v) => fijo(cx + v * ESCALA);
+  const hombros = g + (H - g) * LINEA_HOMBROS;
 
-  const hombro = g + (H - g) * 0.52;   // altura de la línea de hombros
-  const techo = w * 0.68;              // medio ancho del techo
-  const lado = (s) => [
-    `L${px(s * w)} ${fijo(Y(g + 90))}`,
-    `L${px(s * w)} ${fijo(Y(hombro))}`,
-    `C${px(s * w)} ${fijo(Y(hombro + 60))} ${px(s * techo * 1.08)} ${fijo(Y(H - 170))} ${px(s * techo)} ${fijo(Y(H - 60))}`,
-    `Q${px(s * techo * 0.95)} ${fijo(Y(H))} ${px(s * techo * 0.72)} ${fijo(Y(H))}`
-  ];
-  const der = lado(1);
-  const izq = lado(-1);
+  const media = contornoSeccion(w, g + 90, H, hombros, H);
+  const subir = media.map((q) => `L${px(q[0])} ${fijo(Y(q[1]))}`).join(' ');
+  const bajar = media.slice().reverse().map((q) => `L${px(-q[0])} ${fijo(Y(q[1]))}`).join(' ');
   const d = `M${px(-w * 0.9)} ${fijo(Y(g))} L${px(w * 0.9)} ${fijo(Y(g))} ` +
-    `Q${px(w)} ${fijo(Y(g))} ${px(w)} ${fijo(Y(g + 90))} ` + der.slice(1).join(' ') +
-    ` L${px(-techo * 0.72)} ${fijo(Y(H))} Q${px(-techo * 0.95)} ${fijo(Y(H))} ${px(-techo)} ${fijo(Y(H - 60))} ` +
-    `C${px(-techo * 1.08)} ${fijo(Y(H - 170))} ${px(-w)} ${fijo(Y(hombro + 60))} ${px(-w)} ${fijo(Y(hombro))} ` +
-    `L${px(-w)} ${fijo(Y(g + 90))} Q${px(-w)} ${fijo(Y(g))} ${px(-w * 0.9)} ${fijo(Y(g))} Z`;
+    `Q${px(w)} ${fijo(Y(g))} ${px(w)} ${fijo(Y(g + 90))} ${subir} ${bajar} ` +
+    `Q${px(-w)} ${fijo(Y(g))} ${px(-w * 0.9)} ${fijo(Y(g))} Z`;
 
   const ta = a.neumatico * ESCALA, alto = D * ESCALA;
   const borde = Math.min(w - a.neumatico / 2 - 10, w);
@@ -472,7 +600,322 @@ function dibujarFrente(verRuedas) {
   document.getElementById('dibujo-frente').innerHTML = h;
 }
 
-// 6) INTERFAZ: construir y actualizar lo que se ve -------------------
+// 6) MODELO 3D --------------------------------------------------------
+// Un modelo 3D es una lista de vértices (puntos) y caras (triángulos que los unen).
+// La carrocería se arma como un loft: secciones repetidas de adelante hacia atrás.
+// Ejes: x = largo, y = altura, z = ancho. Todas las medidas están en mm.
+
+function nuevaParte(nombre, material) {
+  return { nombre, material, vertices: [], caras: [] };
+}
+
+function area(a, b, c) {
+  const u = [0, 1, 2].map((k) => b[k] - a[k]), v = [0, 1, 2].map((k) => c[k] - a[k]);
+  const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
+  return Math.hypot(n[0], n[1], n[2]) / 2;
+}
+
+function agregarCara(parte, a, b, c) {
+  const v = parte.vertices;
+  if (area(v[a], v[b], v[c]) > 0.001) parte.caras.push([a, b, c]);
+}
+
+// Une una grilla de puntos con caras. filas: secciones; columnas: puntos de cada sección.
+function agregarMalla(parte, filas, invertir) {
+  const base = parte.vertices.length, n = filas[0].length;
+  filas.forEach((fila) => fila.forEach((q) => parte.vertices.push(q)));
+  const id = (i, j) => base + i * n + j;
+  for (let i = 0; i < filas.length - 1; i++) {
+    for (let j = 0; j < n - 1; j++) {
+      const a = id(i, j), b = id(i + 1, j), c = id(i + 1, j + 1), d = id(i, j + 1);
+      if (invertir) { agregarCara(parte, a, c, b); agregarCara(parte, a, d, c); }
+      else { agregarCara(parte, a, b, c); agregarCara(parte, a, c, d); }
+    }
+  }
+}
+
+function interpolar(tabla, x) {
+  if (x <= tabla[0][0]) return tabla[0][1];
+  for (let i = 1; i < tabla.length; i++) {
+    if (x <= tabla[i][0]) {
+      const a = tabla[i - 1], b = tabla[i], t = (x - a[0]) / Math.max(1e-6, b[0] - a[0]);
+      return a[1] + (b[1] - a[1]) * t;
+    }
+  }
+  return tabla[tabla.length - 1][1];
+}
+
+// Tapa el extremo delantero o trasero uniendo su contorno con un punto central.
+function agregarTapa(parte, contorno, invertir) {
+  const centro = [0, 1, 2].map((k) => contorno.reduce((s, q) => s + q[k], 0) / contorno.length);
+  const base = parte.vertices.length;
+  parte.vertices.push(centro);
+  contorno.forEach((q) => parte.vertices.push(q));
+  for (let i = 0; i < contorno.length; i++) {
+    const a = base + 1 + i, b = base + 1 + (i + 1) % contorno.length;
+    if (invertir) agregarCara(parte, base, b, a); else agregarCara(parte, base, a, b);
+  }
+}
+
+function crearCarroceria(a) {
+  const D = diametro(a), ejeDel = a.volDel, ejeTras = a.volDel + a.ejes, largo = ejeTras + a.volTras;
+  const H = a.alto, g = a.despeje, medioAncho = a.ancho / 2;
+  const s = SILUETAS.tipos[tipo], alturas = alturasSilueta();
+  const hombros = g + (H - g) * LINEA_HOMBROS;
+
+  // Contornos del perfil: los mismos de la vista lateral
+  const superior = SILUETAS.u.map((u, i) => [posicion(u, ejeDel, ejeTras, largo), alturas[i] * H]);
+  const R = 0.56 * D, cy = D / 2;
+  const dy = Math.min(R * 0.98, Math.abs(cy - g)), dx = Math.sqrt(R * R - dy * dy);
+  const bajoDel = Math.max(g + 0.04 * D, Math.min(s.b[1], alturas[0] * 0.85) * H);
+  const bajoTras = Math.max(g + 0.04 * D, Math.min(s.b[s.b.length - 2], alturas[alturas.length - 1] * 0.85) * H);
+  const inferior = [[0, bajoDel], [Math.max(0.08 * D, ejeDel - dx - 0.05 * D), g],
+    [Math.min(largo - 0.08 * D, ejeTras + dx + 0.05 * D), g], [largo, bajoTras]];
+
+  // Posiciones de las secciones: más densas alrededor de las ruedas
+  const paradas = [];
+  for (let i = 0; i <= 120; i++) paradas.push(largo * i / 120);
+  [ejeDel, ejeTras].forEach((centro) => {
+    for (let i = 0; i <= 40; i++) paradas.push(centro - dx * Math.cos(Math.PI * i / 40));
+  });
+  const xs = paradas.filter((x) => x >= 0 && x <= largo).sort((m, n) => m - n)
+    .filter((x, i, lista) => i === 0 || x - lista[i - 1] > 0.5);
+
+  // El auto se angosta suavemente en los extremos, visto desde arriba
+  const zonaDel = Math.min(largo * 0.15, ejeDel * 0.8), zonaTras = Math.min(largo * 0.11, a.volTras * 0.8);
+  const planta = (x) => {
+    const redondeo = (d) => Math.sqrt(Math.max(0, 1 - (1 - d) * (1 - d)));
+    if (x < zonaDel) return 0.62 + 0.38 * redondeo(x / zonaDel);
+    if (largo - x < zonaTras) return 0.68 + 0.32 * redondeo((largo - x) / zonaTras);
+    return 1;
+  };
+
+  // Cubierta de la rueda: el arco que se ve en la vista lateral
+  const arco = (x) => [ejeDel, ejeTras].reduce((m, c) =>
+    (Math.abs(x - c) < R ? Math.max(m, cy + Math.sqrt(R * R - (x - c) * (x - c))) : m), 0);
+
+  const piso = [], pared = [], cielo = [], costado = [];
+  const interiorRueda = medioAncho - 15 - a.neumatico - 40;
+  xs.forEach((x) => {
+    const h = medioAncho * planta(x), inf = interpolar(inferior, x), sup = interpolar(superior, x);
+    const tope = Math.max(sup, inf + 30);
+    const interior = Math.max(40, Math.min(interiorRueda, h - 20));
+    const techoRueda = Math.max(inf, Math.min(arco(x), tope - 40));
+    piso.push([0, 1, 2, 3].map((i) => [x, inf, interior * i / 3]));
+    pared.push([[x, inf, interior], [x, techoRueda, interior]]);
+    cielo.push([0, 1, 2].map((i) => [x, techoRueda, interior + (h - interior) * i / 2]));
+    costado.push(contornoSeccion(h, techoRueda, sup, hombros, H).map((q) => [x, q[1], q[0]]));
+  });
+
+  const parte = nuevaParte('carroceria', 'cuerpo');
+  const espejo = (filas) => filas.map((f) => f.map((q) => [q[0], q[1], -q[2]]));
+  [piso, pared, cielo, costado].forEach((filas) => {
+    agregarMalla(parte, filas, false);
+    agregarMalla(parte, espejo(filas), true);
+  });
+
+  // Tapas delantera y trasera
+  const contorno = (i) => {
+    const derecha = [].concat(piso[i], pared[i], cielo[i], costado[i]);
+    const unica = derecha.filter((q, n) => n === 0 || Math.hypot(q[1] - derecha[n - 1][1], q[2] - derecha[n - 1][2]) > 0.01);
+    const izquierda = unica.slice(1, -1).reverse().map((q) => [q[0], q[1], -q[2]]);
+    return unica.concat(izquierda);
+  };
+  agregarTapa(parte, contorno(0), false);
+  agregarTapa(parte, contorno(xs.length - 1), true);
+  return parte;
+}
+
+function crearCilindro(nombre, material, x, y, zCentro, radio, ancho) {
+  const parte = nuevaParte(nombre, material), lados = 40;
+  const anillo = (z) => {
+    const f = [];
+    for (let i = 0; i <= lados; i++) {
+      const t = 2 * Math.PI * i / lados;
+      f.push([x + radio * Math.cos(t), y + radio * Math.sin(t), z]);
+    }
+    return f;
+  };
+  agregarMalla(parte, [anillo(zCentro - ancho / 2), anillo(zCentro + ancho / 2)], true);
+  agregarTapa(parte, anillo(zCentro + ancho / 2).slice(0, -1), false);
+  agregarTapa(parte, anillo(zCentro - ancho / 2).slice(0, -1), true);
+  return parte;
+}
+
+function crearModelo(a) {
+  const D = diametro(a), ejes = [['del', a.volDel], ['tras', a.volDel + a.ejes]];
+  const zRueda = a.ancho / 2 - 15 - a.neumatico / 2;
+  const partes = [crearCarroceria(a)];
+  ejes.forEach(([eje, x]) => {
+    [['der', 1], ['izq', -1]].forEach(([lado, signo]) => {
+      partes.push(crearCilindro(`neumatico_${eje}_${lado}`, 'goma', x, D / 2, signo * zRueda, D / 2, a.neumatico));
+      partes.push(crearCilindro(`llanta_${eje}_${lado}`, 'llanta', x, D / 2, signo * zRueda, a.llanta * 25.4 / 2, a.neumatico + 8));
+    });
+  });
+  return partes;
+}
+
+// Convierte el modelo al formato OBJ, un archivo de texto que abren Blender y Rhino.
+// Las líneas v guardan vértices y las líneas f guardan caras.
+function aOBJ(partes, nombreAuto) {
+  const lineas = ['# Estudio de proporciones', `# Auto: ${nombreAuto}`, '# Unidades: milimetros', ''];
+  let total = 0;
+  partes.forEach((parte) => {
+    const indice = new Map(), mapa = [];
+    lineas.push(`o ${parte.nombre}`);
+    parte.vertices.forEach((q, i) => {
+      const clave = q.map((n) => n.toFixed(1)).join(' ');
+      if (!indice.has(clave)) {
+        indice.set(clave, ++total);
+        lineas.push('v ' + clave);
+      }
+      mapa[i] = indice.get(clave);
+    });
+    parte.caras.forEach((c) => lineas.push(`f ${mapa[c[0]]} ${mapa[c[1]]} ${mapa[c[2]]}`));
+    lineas.push('');
+  });
+  return lineas.join('\n');
+}
+
+// 7) VISOR 3D: muestra el modelo en pantalla con Three.js ---------------
+
+const visor = { escena: null, camara: null, render: null, controles: null, grupo: null, suelo: null };
+
+function colorCSS(nombre) {
+  return new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue(nombre).trim());
+}
+
+function dibujarVisor() {
+  if (visor.render) visor.render.render(visor.escena, visor.camara);
+}
+
+function ajustarVisor() {
+  if (!visor.render) return;
+  const caja = porId('visor-3d');
+  visor.render.setSize(caja.clientWidth, caja.clientHeight, false);
+  visor.camara.aspect = caja.clientWidth / Math.max(1, caja.clientHeight);
+  visor.camara.updateProjectionMatrix();
+  dibujarVisor();
+}
+
+function iniciarVisor() {
+  const caja = porId('visor-3d');
+  visor.render = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  visor.render.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  caja.appendChild(visor.render.domElement);
+
+  visor.escena = new THREE.Scene();
+  visor.camara = new THREE.PerspectiveCamera(28, 16 / 9, 0.1, 100);
+  visor.escena.add(new THREE.HemisphereLight(0xffffff, 0x77807f, 0.62));
+  const sol = new THREE.DirectionalLight(0xffffff, 0.42);
+  sol.position.set(-3, 5, 4);
+  visor.escena.add(sol);
+
+  visor.controles = new THREE.OrbitControls(visor.camara, visor.render.domElement);
+  visor.controles.enableDamping = false;
+  visor.controles.maxPolarAngle = Math.PI / 2 - 0.02;   // la cámara no baja del suelo
+  visor.controles.addEventListener('change', dibujarVisor);
+
+  new ResizeObserver(ajustarVisor).observe(caja);
+}
+
+function mostrarModelo(partes, a) {
+  if (!visor.render) iniciarVisor();
+  visor.escena.background = colorCSS('--plano');
+
+  const limpiar = (objeto) => {
+    if (!objeto) return;
+    visor.escena.remove(objeto);
+    objeto.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) o.material.dispose();
+    });
+  };
+  limpiar(visor.grupo);
+  limpiar(visor.suelo);
+
+  const colores = {
+    cuerpo: colorCSS('--carroceria'), goma: new THREE.Color(0x23292b), llanta: colorCSS('--llanta')
+  };
+  const largo = a.volDel + a.ejes + a.volTras, D = diametro(a), metro = 0.001;
+
+  visor.grupo = new THREE.Group();
+  partes.forEach((parte) => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(parte.vertices.flat(), 3));
+    g.setIndex(parte.caras.flat());
+    g.computeVertexNormals();
+    const m = new THREE.MeshStandardMaterial({ color: colores[parte.material], roughness: 0.55, metalness: 0.05 });
+    visor.grupo.add(new THREE.Mesh(g, m));
+  });
+  visor.grupo.scale.setScalar(metro);
+  visor.grupo.position.x = -largo / 2 * metro;
+  visor.escena.add(visor.grupo);
+
+  // Cada cuadro del suelo mide una rueda
+  const cuadros = Math.ceil(10000 / D);
+  visor.suelo = new THREE.GridHelper(cuadros * D * metro, cuadros, colorCSS('--tinta-suave'), colorCSS('--linea'));
+  visor.escena.add(visor.suelo);
+
+  const c = largo * metro;
+  visor.controles.target.set(0, a.alto * 0.45 * metro, 0);
+  // En pantallas angostas la cámara se aleja para que el auto quepa completo
+  const caja = porId('visor-3d');
+  const alejar = Math.max(1, 1.7 * caja.clientHeight / Math.max(1, caja.clientWidth));
+  visor.camara.position.set(-c * 1.2 * alejar, c * 0.5 * alejar, c * 1.5 * alejar);
+  visor.controles.update();
+  ajustarVisor();
+}
+
+// 8) COMPILAR: reúne las vistas y el modelo del auto actual -------------
+
+let compilado = null;
+
+const huellaAuto = () => JSON.stringify([tipo, auto]);
+
+function compilar() {
+  const partes = crearModelo(auto);
+  compilado = {
+    huella: huellaAuto(),
+    obj: aOBJ(partes, TIPOLOGIAS[tipo].nombre),
+    archivo: `${TIPOLOGIAS[tipo].nombre.toLowerCase().replace('á', 'a').replace('é', 'e')}-compilado.obj`
+  };
+  porId('vista-lateral').innerHTML = porId('dibujo-perfil').innerHTML;
+  porId('vista-frontal').innerHTML = porId('dibujo-frente').innerHTML;
+  porId('resultado').hidden = false;
+
+  try {
+    mostrarModelo(partes, auto);
+  } catch (error) {
+    porId('visor-3d').innerHTML = '<p class="sin-3d">Este navegador no pudo mostrar el modelo 3D. Prueba con Chrome o Edge actualizado. El OBJ se puede descargar igual.</p>';
+  }
+  actualizarEstado();
+  porId('resultado').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function actualizarEstado() {
+  if (!compilado) return;
+  const vigente = compilado.huella === huellaAuto();
+  const estado = porId('estado-compilado');
+  estado.textContent = vigente
+    ? 'El resultado coincide con los controles actuales.'
+    : 'Cambiaste los controles. Presiona Compilar para actualizar el resultado.';
+  estado.classList.toggle('aviso', !vigente);
+}
+
+// Crea un archivo en la memoria del navegador y lo descarga.
+function descargarOBJ() {
+  if (!compilado) return;
+  const enlace = document.createElement('a');
+  enlace.href = URL.createObjectURL(new Blob([compilado.obj], { type: 'text/plain' }));
+  enlace.download = compilado.archivo;
+  document.body.appendChild(enlace);
+  enlace.click();
+  enlace.remove();
+  setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+}
+
+// 9) INTERFAZ: construir y actualizar lo que se ve -------------------
 
 const porId = (id) => document.getElementById(id);
 
@@ -505,6 +948,8 @@ function crearInterfaz() {
 
   porId('ver-ruedas').addEventListener('change', actualizar);
   porId('volver').addEventListener('click', () => { cargarTipologia(tipo); actualizar(); });
+  porId('compilar').addEventListener('click', compilar);
+  porId('descargar-obj').addEventListener('click', descargarOBJ);
 }
 
 function actualizar() {
@@ -539,9 +984,10 @@ function actualizar() {
   const ver = porId('ver-ruedas').checked;
   dibujarPerfil(ver);
   dibujarFrente(ver);
+  actualizarEstado();
 }
 
-// 7) INICIO ---------------------------------------------------------
+// 10) INICIO ---------------------------------------------------------
 crearInterfaz();
 cargarTipologia('sedan');
 actualizar();
